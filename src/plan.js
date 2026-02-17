@@ -130,6 +130,19 @@ export async function plan() {
     prd.project = basename(process.cwd());
   }
 
+  // Merge with existing stories if prd.json already exists
+  if (existingPrd) {
+    try {
+      const existing = JSON.parse(existingPrd);
+      const existingStories = existing.userStories || [];
+      prd.userStories = [...existingStories, ...prd.userStories];
+      if (!prd.project && existing.project) prd.project = existing.project;
+      if (!prd.description && existing.description) prd.description = existing.description;
+    } catch {
+      // If existing prd.json is malformed, just use the new one
+    }
+  }
+
   // Write prd.json
   await writeFile(prdPath, JSON.stringify(prd, null, 2) + '\n', 'utf-8');
 
