@@ -52,5 +52,6 @@ export async function generateTwin(name, interviewText) {
   const outPath = resolve(process.cwd(), filename);
   await writeFile(outPath, content, 'utf-8');
   console.log(`Done! Your twin file is at: ${outPath}`);
-  console.log('\nDrop this file into any project and your AI tools will know your taste.');
+  console.log('\nNext step — plan what to build:');
+  console.log('  twin plan');
 }

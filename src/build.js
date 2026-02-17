@@ -214,7 +214,9 @@ export async function build(maxIterations = 5) {
     if (output.includes(ALL_DONE_SIGNAL)) {
       console.log(`\n${'='.repeat(60)}`);
       console.log('  All stories complete!');
-      console.log(`${'='.repeat(60)}\n`);
+      console.log(`${'='.repeat(60)}`);
+      console.log('\nNext step — plan more features:');
+      console.log('  twin plan\n');
       break;
     }
 
@@ -225,7 +227,9 @@ export async function build(maxIterations = 5) {
       if (remaining.length === 0) {
         console.log(`\n${'='.repeat(60)}`);
         console.log('  All stories complete!');
-        console.log(`${'='.repeat(60)}\n`);
+        console.log(`${'='.repeat(60)}`);
+        console.log('\nNext step — plan more features:');
+        console.log('  twin plan\n');
         break;
       }
       console.log(`\nStory complete. ${remaining.length} remaining.\n`);
