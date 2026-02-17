@@ -50,6 +50,9 @@ export OPENROUTER_API_KEY="your-key-here"
 npx twin-cli init
 
 # Your .twin file is generated in the current directory
+
+# Generate tasks that match your taste
+npx twin-cli plan
 ```
 
 Get an OpenRouter key at [openrouter.ai/keys](https://openrouter.ai/keys).
@@ -64,13 +67,25 @@ Drop `.twin` into any project root. Then tell your AI tools to read it:
 
 The twin travels with you, not with the project. Use the same file everywhere.
 
+## Commands
+
+### `twin init`
+Answer 5 questions about how you build things. Generates your `.twin` file — your decision-making DNA.
+
+### `twin plan`
+Reads your `.twin` file + project context, generates 3-5 atomic tasks that match your taste.
+
+Outputs two files:
+- **`prd.json`** — structured JSON for agent tools and dev loops
+- **`tasks.md`** — human-readable Markdown, paste-able into any AI chat
+
+If no `product.md` exists, `twin plan` will ask 3 quick questions to set up your project context first. Running it again appends new tasks without duplicating existing ones.
+
 ## Philosophy
 
 This project follows the skateboard-to-car model of iterative delivery. Right now it's a skateboard — `twin init` generates a file. That file is independently valuable today.
 
 What comes next: `twin tweak` for natural language updates, `twin start` for autonomous building, `twin share` for publishing your taste publicly.
-
-But first: the skateboard.
 
 ## License
 

@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { callLLM } from './llm.js';
 
 const SYSTEM_PROMPT = `You are a taste interpreter. You read someone's answers to 5 questions about how they build things, and you produce a .twin file — a Markdown document that encodes their decision-making DNA.
 
@@ -42,34 +43,11 @@ Rules:
 - No preamble, no explanation — just the .twin file content`;
 
 export async function generateTwin(apiKey, interviewText) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Here are the interview answers. Generate the .twin file.\n\n${interviewText}` },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    console.error(`OpenRouter API error (${res.status}): ${err}`);
-    process.exit(1);
-  }
-
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    console.error('No content returned from API.');
-    process.exit(1);
-  }
+  const content = await callLLM(
+    apiKey,
+    SYSTEM_PROMPT,
+    `Here are the interview answers. Generate the .twin file.\n\n${interviewText}`,
+  );
 
   const outPath = resolve(process.cwd(), '.twin');
   await writeFile(outPath, content, 'utf-8');
