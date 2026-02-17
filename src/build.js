@@ -56,20 +56,77 @@ ${progressContent ? `\n## progress.md\n${progressContent}` : ''}
 `;
 }
 
+function extractTextFromEvent(jsonLine) {
+  try {
+    const event = JSON.parse(jsonLine);
+
+    // Text delta from assistant message streaming
+    if (event.type === 'assistant' && event.message?.content) {
+      // Full message content (final)
+      return event.message.content
+        .filter((block) => block.type === 'text')
+        .map((block) => block.text)
+        .join('');
+    }
+
+    // Partial streaming text delta
+    if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+      return event.delta.text;
+    }
+
+    // Result message with text
+    if (event.type === 'result' && event.result) {
+      return null; // Already captured via deltas
+    }
+  } catch {
+    // Not valid JSON or unexpected shape — skip
+  }
+  return null;
+}
+
 function runIteration(prompt, cwd) {
   return new Promise((resolvePromise) => {
-    const claude = spawn('claude', ['--dangerously-skip-permissions', '--print'], {
+    const claude = spawn('claude', [
+      '--print',
+      '--dangerously-skip-permissions',
+      '--output-format', 'stream-json',
+    ], {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env },
     });
 
     let output = '';
+    let buffer = '';
+    let hasReceivedText = false;
+
+    // Heartbeat timer — show elapsed time while waiting
+    const startTime = Date.now();
+    const heartbeat = setInterval(() => {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      if (!hasReceivedText) {
+        process.stdout.write(`\rWorking... (${elapsed}s)`);
+      }
+    }, 10_000);
 
     claude.stdout.on('data', (chunk) => {
-      const text = chunk.toString();
-      process.stdout.write(text);
-      output += text;
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep incomplete last line in buffer
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const text = extractTextFromEvent(line);
+        if (text) {
+          if (!hasReceivedText) {
+            // Clear the heartbeat line on first real output
+            process.stdout.write('\r\x1b[K');
+            hasReceivedText = true;
+          }
+          process.stdout.write(text);
+          output += text;
+        }
+      }
     });
 
     claude.stderr.on('data', (chunk) => {
@@ -77,10 +134,23 @@ function runIteration(prompt, cwd) {
     });
 
     claude.on('close', (code) => {
+      clearInterval(heartbeat);
+      // Process any remaining buffer
+      if (buffer.trim()) {
+        const text = extractTextFromEvent(buffer.trim());
+        if (text) {
+          process.stdout.write(text);
+          output += text;
+        }
+      }
+      if (!hasReceivedText) {
+        process.stdout.write('\r\x1b[K'); // Clear heartbeat line
+      }
       resolvePromise({ output, code });
     });
 
     claude.on('error', (err) => {
+      clearInterval(heartbeat);
       if (err.code === 'ENOENT') {
         console.error('\nClaude Code is not installed or not in PATH.');
         console.error('Install it: https://docs.anthropic.com/en/docs/claude-code\n');
