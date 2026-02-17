@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve, basename } from 'node:path';
-import { requireKey, checkKey, callLLM } from './llm.js';
+import { callLLM } from './llm.js';
 import { createPrompter } from './prompt.js';
 
 const TASK_SYSTEM_PROMPT = `You are a taste-aware product planner. You receive:
@@ -72,12 +72,6 @@ function parseLLMJson(raw) {
 }
 
 export async function plan() {
-  const key = requireKey();
-
-  console.log('\nChecking API connection...');
-  await checkKey(key);
-  console.log('Connected.\n');
-
   // Find *.twin file — required
   const cwd = process.cwd();
   const files = await readdir(cwd);
@@ -119,7 +113,7 @@ export async function plan() {
   console.log('--- twin plan ---');
   console.log('Generating tasks that match your taste...\n');
 
-  const raw = await callLLM(key, TASK_SYSTEM_PROMPT, userMessage);
+  const raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
 
   // Parse structured output
   let prd;

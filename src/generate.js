@@ -42,9 +42,8 @@ Rules:
 - Keep it under 80 lines total
 - No preamble, no explanation — just the .twin file content`;
 
-export async function generateTwin(apiKey, name, interviewText) {
+export async function generateTwin(name, interviewText) {
   const content = await callLLM(
-    apiKey,
     SYSTEM_PROMPT,
     `The builder's name is ${name}.\n\nHere are the interview answers. Generate the .twin file.\n\n${interviewText}`,
   );

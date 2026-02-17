@@ -1,59 +1,52 @@
-export function requireKey() {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) {
-    console.log('\nSet your OpenRouter API key first:');
-    console.log('  export OPENROUTER_API_KEY="your-key-here"');
-    console.log('\nGet one at https://openrouter.ai/keys\n');
-    process.exit(1);
-  }
-  return key;
-}
+import { spawn } from 'node:child_process';
 
-export async function checkKey(key) {
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: { 'Authorization': `Bearer ${key}` },
+export async function callLLM(systemPrompt, userMessage) {
+  const prompt = `${systemPrompt}\n\n${userMessage}`;
+
+  const output = await new Promise((resolve, reject) => {
+    const claude = spawn('claude', ['--print'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env },
     });
-    if (!res.ok) {
-      console.error(`\nAPI key check failed (${res.status}). Make sure your OPENROUTER_API_KEY is valid.`);
-      console.log('Get one at https://openrouter.ai/keys\n');
-      process.exit(1);
-    }
-  } catch (e) {
-    console.error('\nCould not connect to OpenRouter. Check your internet connection.\n');
-    process.exit(1);
-  }
-}
 
-export async function callLLM(apiKey, systemPrompt, userMessage) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-3-flash-preview',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-    }),
+    let stdout = '';
+    let stderr = '';
+
+    claude.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    claude.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    claude.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`Claude Code exited with code ${code}.`);
+        if (stderr) console.error(stderr);
+        process.exit(1);
+      }
+      resolve(stdout.trim());
+    });
+
+    claude.on('error', (err) => {
+      if (err.code === 'ENOENT') {
+        console.error('\nClaude Code is not installed or not in PATH.');
+        console.error('Install it: https://docs.anthropic.com/en/docs/claude-code\n');
+        process.exit(1);
+      }
+      console.error(`\nFailed to spawn Claude: ${err.message}\n`);
+      process.exit(1);
+    });
+
+    claude.stdin.write(prompt);
+    claude.stdin.end();
   });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error(`OpenRouter API error (${res.status}): ${err}`);
+  if (!output) {
+    console.error('No content returned from Claude Code.');
     process.exit(1);
   }
 
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content;
-
-  if (!content) {
-    console.error('No content returned from API.');
-    process.exit(1);
-  }
-
-  return content;
+  return output;
 }

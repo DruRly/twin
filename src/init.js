@@ -1,4 +1,3 @@
-import { requireKey, checkKey } from './llm.js';
 import { createPrompter } from './prompt.js';
 import { generateTwin } from './generate.js';
 
@@ -11,13 +10,7 @@ const QUESTIONS = [
 ];
 
 export async function init() {
-  const key = requireKey();
-
-  console.log('\nChecking API connection...');
-  await checkKey(key);
-  console.log('Connected.\n');
-
-  console.log('--- twin init ---');
+  console.log('\n--- twin init ---');
   console.log('Answer a few questions. Say as much or as little as you want.');
   console.log('Your answers will be used to generate your .twin file.\n');
 
@@ -35,5 +28,5 @@ export async function init() {
   console.log('\nGenerating your .twin file...\n');
 
   const paired = answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
-  await generateTwin(key, name, paired);
+  await generateTwin(name, paired);
 }

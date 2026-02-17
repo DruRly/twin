@@ -29,8 +29,7 @@ twin build    # your twin builds it
 ## Before You Start
 
 - **Node.js 18+** — [nodejs.org](https://nodejs.org)
-- **OpenRouter API key** — [openrouter.ai/keys](https://openrouter.ai/keys) (used by `twin init` and `twin plan`)
-- **Claude Code** — [docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code) (used by `twin build`)
+- **Claude Code** — [docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code) (powers all three commands)
 
 ## Quick Start
 
@@ -40,25 +39,20 @@ Every twin project starts in its own folder. Create one, then run the commands f
 # 0. Create a project folder
 mkdir my-app && cd my-app
 
-# 1. Set your OpenRouter API key
-export OPENROUTER_API_KEY="your-key-here"
-
-# 2. Create your twin (only need to do this once)
+# 1. Create your twin (only need to do this once)
 npx twin-cli init
 # → Asks your name, then 5 questions about how you build
 # → Generates yourname.twin
 
-# 3. Generate your first plan
+# 2. Generate your first plan
 npx twin-cli plan
 # → Reads your twin, asks about your product, writes prd.json
 
-# 4. Let your twin build
+# 3. Let your twin build
 npx twin-cli build
 # → Spawns Claude Code in a loop
 # → Builds each story, updates prd.json as it goes
 ```
-
-Get an OpenRouter key at [openrouter.ai/keys](https://openrouter.ai/keys).
 
 ## Example: Building a Habit Tracker
 
@@ -67,9 +61,6 @@ Here is a full walkthrough from zero to working app.
 ```bash
 # Create the project
 mkdir habit-tracker && cd habit-tracker
-
-# Set your key
-export OPENROUTER_API_KEY="sk-or-..."
 
 # Create your twin
 npx twin-cli init
