@@ -45,16 +45,15 @@ async function readIfExists(path) {
 
 async function bootstrapProduct() {
   console.log('\nNo product.md found. Let\'s set up your project context.');
-  console.log('(3 quick questions — no AI involved, just capturing facts.)\n');
+  console.log('(2 quick questions — no AI involved, just capturing facts.)\n');
 
   const prompter = createPrompter();
 
-  const what = await prompter.ask('What are you building? One sentence is fine.');
+  const what = await prompter.ask('What are you building?');
   const who = await prompter.ask('Who is it for?');
-  const state = await prompter.ask('What can it do right now? (If nothing yet, just say "nothing".)');
   prompter.close();
 
-  const content = `# Product\n\n## What\n${what}\n\n## Who\n${who}\n\n## Current State\n${state}\n`;
+  const content = `# Product\n\n## What\n${what}\n\n## Who\n${who}\n`;
 
   const outPath = resolve(process.cwd(), 'product.md');
   await writeFile(outPath, content, 'utf-8');

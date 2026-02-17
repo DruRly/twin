@@ -24,6 +24,49 @@ npx twin-cli init
 
 That's it. No accounts. No config files. No setup. Just you, answering questions about how you build things.
 
+## Quick Start
+
+```bash
+# 1. Set your OpenRouter API key
+export OPENROUTER_API_KEY="your-key-here"
+
+# 2. Create your twin
+npx twin-cli init
+
+# 3. Generate your first plan
+npx twin-cli plan
+
+# 4. Run plan again to extend — your twin keeps prioritizing
+npx twin-cli plan
+```
+
+Get an OpenRouter key at [openrouter.ai/keys](https://openrouter.ai/keys).
+
+## The Loop: init → plan → build → plan
+
+This is the core workflow. Your twin drives the cycle:
+
+1. **`twin init`** — create your taste profile (once)
+2. **`twin plan`** — your twin generates tasks that match how you'd prioritize
+3. **Build** — hand `prd.json` to your agent, or paste `tasks.md` into any AI chat
+4. **`twin plan`** again — your twin sees what exists and plans what's next
+
+Each time you run `plan`, it reads your `.twin`, your `product.md`, and any existing `tasks.md` to avoid duplicates and keep building forward. Your taste stays consistent across every iteration.
+
+## Commands
+
+### `twin init`
+Answer 5 questions about how you build things. Generates your `.twin` file — your decision-making DNA.
+
+### `twin plan`
+Reads your `.twin` file + project context, generates 3-5 atomic tasks that match your taste.
+
+Outputs two files:
+- **`prd.json`** — structured JSON for agent tools and dev loops
+- **`tasks.md`** — human-readable Markdown, paste-able into any AI chat
+
+If no `product.md` exists, `twin plan` asks 2 quick questions to set up your project context first. Running it again appends new tasks without duplicating existing ones.
+
 ## What Goes in a `.twin` File
 
 - **Execution Bias** — do you plan or build first? Ship ugly or wait for polish?
@@ -39,47 +82,6 @@ That's it. No accounts. No config files. No setup. Just you, answering questions
 - Your roadmap (that's a PRD)
 
 **The twin encodes how you think. Project files encode what you're building. The twin is the founder. The project files are the company.**
-
-## Quick Start
-
-```bash
-# Set your OpenRouter API key
-export OPENROUTER_API_KEY="your-key-here"
-
-# Run the interview
-npx twin-cli init
-
-# Your .twin file is generated in the current directory
-
-# Generate tasks that match your taste
-npx twin-cli plan
-```
-
-Get an OpenRouter key at [openrouter.ai/keys](https://openrouter.ai/keys).
-
-## How to Use Your Twin
-
-Drop `.twin` into any project root. Then tell your AI tools to read it:
-
-- **Claude Code**: it picks up `.twin` automatically if it's in your project
-- **Cursor**: add `.twin` to your project context
-- **Any LLM chat**: paste the contents as system context
-
-The twin travels with you, not with the project. Use the same file everywhere.
-
-## Commands
-
-### `twin init`
-Answer 5 questions about how you build things. Generates your `.twin` file — your decision-making DNA.
-
-### `twin plan`
-Reads your `.twin` file + project context, generates 3-5 atomic tasks that match your taste.
-
-Outputs two files:
-- **`prd.json`** — structured JSON for agent tools and dev loops
-- **`tasks.md`** — human-readable Markdown, paste-able into any AI chat
-
-If no `product.md` exists, `twin plan` will ask 3 quick questions to set up your project context first. Running it again appends new tasks without duplicating existing ones.
 
 ## Philosophy
 
