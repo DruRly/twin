@@ -56,27 +56,33 @@ ${progressContent ? `\n## progress.md\n${progressContent}` : ''}
 `;
 }
 
-function extractTextFromEvent(jsonLine) {
+function parseEvent(jsonLine) {
   try {
     const event = JSON.parse(jsonLine);
 
     // Text delta from assistant message streaming
     if (event.type === 'assistant' && event.message?.content) {
-      // Full message content (final)
-      return event.message.content
+      const text = event.message.content
         .filter((block) => block.type === 'text')
         .map((block) => block.text)
         .join('');
+      if (text) return { type: 'text', text };
     }
 
     // Partial streaming text delta
     if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-      return event.delta.text;
+      return { type: 'text', text: event.delta.text };
     }
 
-    // Result message with text
-    if (event.type === 'result' && event.result) {
-      return null; // Already captured via deltas
+    // Tool use — show what Claude is doing
+    if (event.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
+      const name = event.content_block.name || 'working';
+      return { type: 'tool', name };
+    }
+
+    // Tool result
+    if (event.type === 'content_block_start' && event.content_block?.type === 'tool_result') {
+      return { type: 'tool_done' };
     }
   } catch {
     // Not valid JSON or unexpected shape — skip
@@ -98,16 +104,41 @@ function runIteration(prompt, cwd) {
 
     let output = '';
     let buffer = '';
-    let hasReceivedText = false;
+    let lastActivity = Date.now();
+    let statusLine = false; // true when a status line is showing
+
+    const TOOL_LABELS = {
+      Read: 'Reading file',
+      Write: 'Writing file',
+      Edit: 'Editing file',
+      Bash: 'Running command',
+      Glob: 'Searching files',
+      Grep: 'Searching code',
+    };
+
+    function clearStatus() {
+      if (statusLine) {
+        process.stdout.write('\r\x1b[K');
+        statusLine = false;
+      }
+    }
+
+    function showStatus(msg) {
+      clearStatus();
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      process.stdout.write(`\r\x1b[2m${msg} (${elapsed}s)\x1b[0m`);
+      statusLine = true;
+    }
 
     // Heartbeat timer — show elapsed time while waiting
     const startTime = Date.now();
     const heartbeat = setInterval(() => {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
-      if (!hasReceivedText) {
-        process.stdout.write(`\rWorking... (${elapsed}s)`);
+      const idle = Date.now() - lastActivity;
+      if (idle > 5_000) {
+        showStatus('Working...');
       }
-    }, 10_000);
+    }, 5_000);
 
     claude.stdout.on('data', (chunk) => {
       buffer += chunk.toString();
@@ -116,15 +147,20 @@ function runIteration(prompt, cwd) {
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        const text = extractTextFromEvent(line);
-        if (text) {
-          if (!hasReceivedText) {
-            // Clear the heartbeat line on first real output
-            process.stdout.write('\r\x1b[K');
-            hasReceivedText = true;
-          }
-          process.stdout.write(text);
-          output += text;
+        const event = parseEvent(line);
+        if (!event) continue;
+
+        lastActivity = Date.now();
+
+        if (event.type === 'text') {
+          clearStatus();
+          process.stdout.write(event.text);
+          output += event.text;
+        } else if (event.type === 'tool') {
+          const label = TOOL_LABELS[event.name] || event.name;
+          showStatus(label);
+        } else if (event.type === 'tool_done') {
+          clearStatus();
         }
       }
     });
@@ -135,16 +171,14 @@ function runIteration(prompt, cwd) {
 
     claude.on('close', (code) => {
       clearInterval(heartbeat);
+      clearStatus();
       // Process any remaining buffer
       if (buffer.trim()) {
-        const text = extractTextFromEvent(buffer.trim());
-        if (text) {
-          process.stdout.write(text);
-          output += text;
+        const event = parseEvent(buffer.trim());
+        if (event?.type === 'text') {
+          process.stdout.write(event.text);
+          output += event.text;
         }
-      }
-      if (!hasReceivedText) {
-        process.stdout.write('\r\x1b[K'); // Clear heartbeat line
       }
       resolvePromise({ output, code });
     });
