@@ -16,13 +16,13 @@ The root cause: agents don't know what you *would* build next. They don't have y
 
 ## The Solution
 
-Answer a few questions. Get a `yourname.twin` file. Now every AI tool you use knows how you think.
+Three commands. That's it.
 
+```bash
+twin init     # encode your taste
+twin plan     # your twin decides what to build
+twin build    # your twin builds it
 ```
-npx twin-cli init
-```
-
-That's it. No accounts. No config files. No setup. Just you, answering questions about how you build things.
 
 ## Quick Start
 
@@ -37,23 +37,25 @@ npx twin-cli init
 
 # 3. Generate your first plan
 npx twin-cli plan
+# → Reads your twin, asks about your product, writes prd.json + tasks.md
 
-# 4. Run plan again to extend — your twin keeps prioritizing
-npx twin-cli plan
+# 4. Let your twin build it
+npx twin-cli build
+# → Spawns Claude Code in a loop, builds each story, updates prd.json as it goes
 ```
 
 Get an OpenRouter key at [openrouter.ai/keys](https://openrouter.ai/keys).
 
 ## The Loop: init → plan → build → plan
 
-This is the core workflow. Your twin drives the cycle:
+This is the core workflow. Your twin drives the whole cycle:
 
 1. **`twin init`** — create your taste profile (once)
 2. **`twin plan`** — your twin generates tasks that match how you'd prioritize
-3. **Build** — hand `prd.json` to your agent, or paste `tasks.md` into any AI chat
-4. **`twin plan`** again — your twin sees what exists and plans what's next
+3. **`twin build`** — your twin builds autonomously, updating prd.json as stories complete
+4. **`twin plan`** again — your twin sees what's done and plans what's next
 
-Each time you run `plan`, it reads your `name.twin`, your `product.md`, and any existing `tasks.md` to avoid duplicates and keep building forward. Your taste stays consistent across every iteration.
+Each iteration, Claude Code starts fresh but reads the files on disk — your twin, the PRD, and a progress log. The files are the memory. Your taste stays consistent across every iteration.
 
 ## Commands
 
@@ -61,13 +63,29 @@ Each time you run `plan`, it reads your `name.twin`, your `product.md`, and any 
 Asks your name, then 5 questions about how you build things. Generates `yourname.twin` — your decision-making DNA.
 
 ### `twin plan`
-Reads your `.twin` file + project context, generates 3-5 atomic tasks that match your taste.
+Reads your `.twin` file + project context, generates 3-5 atomic capabilities that match your taste.
 
 Outputs two files:
-- **`prd.json`** — structured JSON for agent tools and dev loops
+- **`prd.json`** — structured JSON with user stories and status tracking
 - **`tasks.md`** — human-readable Markdown, paste-able into any AI chat
 
 If no `product.md` exists, `twin plan` asks 2 quick questions to set up your project context first. Running it again appends new tasks without duplicating existing ones.
+
+### `twin build`
+Runs an autonomous build loop using Claude Code. Each iteration:
+- Reads your twin file for taste
+- Reads `prd.json` for open stories
+- Picks the next story to build (the model decides, based on your taste)
+- Builds it, commits, and marks it done in `prd.json`
+- Appends learnings to `progress.md`
+- Repeats until all stories are done or max iterations hit
+
+```bash
+twin build                    # default: 10 iterations
+twin build --max-iterations 5 # custom limit
+```
+
+Requires [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and available in your PATH.
 
 ## What Goes in a `.twin` File
 
@@ -87,9 +105,9 @@ If no `product.md` exists, `twin plan` asks 2 quick questions to set up your pro
 
 ## Philosophy
 
-This project follows the skateboard-to-car model of iterative delivery. Right now it's a skateboard — `twin init` generates a file. That file is independently valuable today.
+This project follows the skateboard-to-car model of iterative delivery.
 
-What comes next: `twin tweak` for natural language updates, `twin start` for autonomous building, `twin share` for publishing your taste publicly.
+What comes next: `twin tweak` for natural language updates, `twin share` for publishing your taste publicly.
 
 ## License
 

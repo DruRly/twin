@@ -29,11 +29,13 @@ Schema:
       "title": "short capability title",
       "description": "As a [user], I can [do thing] so that [value].",
       "acceptanceCriteria": ["criterion 1", "criterion 2"],
-      "priority": 1,
+      "status": "open",
       "whyNow": "one sentence: why this is the right next thing"
     }
   ]
-}`;
+}
+
+Every story MUST have "status": "open". Do not include priority numbers — ordering in the array IS the priority.`;
 
 async function readIfExists(path) {
   try {
