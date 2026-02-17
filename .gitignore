@@ -1,0 +1,5 @@
+node_modules/
+*.swp
+context.txt
+FUTURE.md
+domain_options.csv

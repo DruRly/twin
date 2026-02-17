@@ -1,0 +1,26 @@
+{
+  "name": "twin-cli",
+  "version": "0.1.0",
+  "description": "Encode your decision-making DNA into a .twin file. The .env of taste.",
+  "type": "module",
+  "bin": {
+    "twin": "./bin/twin.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "keywords": [
+    "twin",
+    "taste",
+    "ai",
+    "agent",
+    "decision-making",
+    "vibe-coding"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
