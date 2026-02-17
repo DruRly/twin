@@ -1,7 +1,7 @@
 {
   "name": "twin-cli",
-  "version": "0.1.0",
-  "description": "Encode your decision-making DNA into a .twin file. The .env of taste.",
+  "version": "0.2.0",
+  "description": "Your twin builds while you sleep. Not human in the loop. Twin in the loop.",
   "type": "module",
   "bin": {
     "twin": "./bin/twin.js"
