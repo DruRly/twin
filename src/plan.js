@@ -46,8 +46,7 @@ async function readIfExists(path) {
 }
 
 async function bootstrapProduct() {
-  console.log('\nNo product.md found. Let\'s set up your project context.');
-  console.log('(2 quick questions — no AI involved, just capturing facts.)\n');
+  console.log('\nNo product.md found. Let\'s set up your project context.\n');
 
   const prompter = createPrompter();
 
