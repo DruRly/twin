@@ -95,7 +95,7 @@ function runIteration(prompt, cwd) {
   });
 }
 
-export async function build(maxIterations = 10) {
+export async function build(maxIterations = 5) {
   const cwd = process.cwd();
 
   // Find twin file

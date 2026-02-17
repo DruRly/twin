@@ -17,7 +17,7 @@ if (!command || command === 'init') {
 } else if (command === 'plan') {
   plan();
 } else if (command === 'build') {
-  const maxIterations = parseInt(parseFlag('--max-iterations', '10'), 10);
+  const maxIterations = parseInt(parseFlag('--max-iterations', '5'), 10);
   build(maxIterations);
 } else if (command === '--help' || command === '-h') {
   console.log(`
@@ -26,7 +26,7 @@ twin - encode your decision-making DNA
 Usage:
   twin init                    Interview yourself, generate your .twin file
   twin plan                    Generate tasks that match your taste
-  twin build [--max-iterations N]  Build autonomously using Claude Code (default: 10)
+  twin build [--max-iterations N]  Build autonomously using Claude Code (default: 5)
   twin --help                  Show this message
 `);
 } else {

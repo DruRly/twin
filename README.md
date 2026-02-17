@@ -81,8 +81,8 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 - Repeats until all stories are done or max iterations hit
 
 ```bash
-twin build                    # default: 10 iterations
-twin build --max-iterations 5 # custom limit
+twin build                     # default: 5 iterations
+twin build --max-iterations 10 # custom limit
 ```
 
 Requires [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and available in your PATH.
