@@ -24,6 +24,12 @@ twin plan     # your twin decides what to build
 twin build    # your twin builds it
 ```
 
+## Prerequisites
+
+- **Node.js 18+** — [nodejs.org](https://nodejs.org)
+- **OpenRouter API key** — [openrouter.ai/keys](https://openrouter.ai/keys) (for `twin init` and `twin plan`)
+- **Claude Code** — [docs.anthropic.com/en/docs/claude-code](https://docs.anthropic.com/en/docs/claude-code) (for `twin build`)
+
 ## Quick Start
 
 ```bash
