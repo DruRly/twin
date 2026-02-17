@@ -7,7 +7,7 @@ const TASK_SYSTEM_PROMPT = `You are a taste-aware product planner. You receive:
 1. A .twin file — the builder's decision-making DNA (how they think, what they value)
 2. A product.md — what they're building, for whom, and where it stands
 3. Optionally, a status.md — recent progress
-4. Optionally, existing tasks — already planned (avoid duplicating these)
+4. Optionally, an existing prd.json — stories already planned (avoid duplicating these)
 
 Your job: generate 3-5 atomic capabilities — things a user can DO after they're built. Not stubs, not refactors, not "set up X." Real, demoable features.
 
@@ -72,21 +72,6 @@ function parseLLMJson(raw) {
   return JSON.parse(cleaned);
 }
 
-function prdToMarkdown(prd) {
-  const lines = [];
-  for (const story of prd.userStories) {
-    lines.push(`## ${story.id}. ${story.title}`);
-    lines.push(story.description);
-    for (const ac of story.acceptanceCriteria) {
-      lines.push(`- ${ac}`);
-    }
-    lines.push('');
-    lines.push(`**Why now:** ${story.whyNow}`);
-    lines.push('');
-  }
-  return lines.join('\n');
-}
-
 export async function plan() {
   const key = requireKey();
 
@@ -118,19 +103,14 @@ export async function plan() {
 
   // Read optional context files
   const statusPath = resolve(process.cwd(), 'status.md');
-  const tasksPath = resolve(process.cwd(), 'tasks.md');
   const prdPath = resolve(process.cwd(), 'prd.json');
   const status = await readIfExists(statusPath);
-  const existingTasks = await readIfExists(tasksPath);
   const existingPrd = await readIfExists(prdPath);
 
   // Assemble user message
   let userMessage = `## .twin file\n${twin}\n\n## product.md\n${product}`;
   if (status) {
     userMessage += `\n\n## status.md\n${status}`;
-  }
-  if (existingTasks) {
-    userMessage += `\n\n## Existing tasks (do NOT duplicate these)\n${existingTasks}`;
   }
   if (existingPrd) {
     userMessage += `\n\n## Existing prd.json (do NOT duplicate these stories)\n${existingPrd}`;
@@ -160,21 +140,16 @@ export async function plan() {
   // Write prd.json
   await writeFile(prdPath, JSON.stringify(prd, null, 2) + '\n', 'utf-8');
 
-  // Write human-readable tasks.md
-  const today = new Date().toISOString().split('T')[0];
-  const markdown = prdToMarkdown(prd);
-  let tasksOutput;
-  if (existingTasks) {
-    tasksOutput = `${existingTasks.trimEnd()}\n\n---\n\n### Generated ${today}\n\n${markdown}`;
-  } else {
-    tasksOutput = `# Tasks\n\n### Generated ${today}\n\n${markdown}`;
+  // Print stories to console
+  for (const story of prd.userStories) {
+    console.log(`${story.id}. ${story.title}`);
+    console.log(`   ${story.description}`);
+    for (const ac of story.acceptanceCriteria) {
+      console.log(`   - ${ac}`);
+    }
+    console.log('');
   }
-  await writeFile(tasksPath, tasksOutput, 'utf-8');
-
-  // Print to console
-  console.log(markdown);
   console.log(`---`);
-  console.log(`Wrote ${prdPath} (structured, for agents)`);
-  console.log(`Wrote ${tasksPath} (readable, for humans)`);
-  console.log('\nHand prd.json to your AI agent or paste tasks.md into any chat.');
+  console.log(`Wrote ${prdPath}`);
+  console.log(`\nRun \`twin build\` to start building.`);
 }

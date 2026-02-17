@@ -37,7 +37,7 @@ npx twin-cli init
 
 # 3. Generate your first plan
 npx twin-cli plan
-# → Reads your twin, asks about your product, writes prd.json + tasks.md
+# → Reads your twin, asks about your product, writes prd.json
 
 # 4. Let your twin build it
 npx twin-cli build
@@ -65,11 +65,9 @@ Asks your name, then 5 questions about how you build things. Generates `yourname
 ### `twin plan`
 Reads your `.twin` file + project context, generates 3-5 atomic capabilities that match your taste.
 
-Outputs two files:
-- **`prd.json`** — structured JSON with user stories and status tracking
-- **`tasks.md`** — human-readable Markdown, paste-able into any AI chat
+Writes **`prd.json`** — structured JSON with user stories and status tracking.
 
-If no `product.md` exists, `twin plan` asks 2 quick questions to set up your project context first. Running it again appends new tasks without duplicating existing ones.
+If no `product.md` exists, `twin plan` asks 2 quick questions to set up your project context first. Running it again adds new stories without duplicating existing ones.
 
 ### `twin build`
 Runs an autonomous build loop using Claude Code. Each iteration:
