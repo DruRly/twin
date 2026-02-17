@@ -16,7 +16,7 @@ The root cause: agents don't know what you *would* build next. They don't have y
 
 ## The Solution
 
-Answer 5 questions. Get a `.twin` file. Now every AI tool you use knows how you think.
+Answer a few questions. Get a `yourname.twin` file. Now every AI tool you use knows how you think.
 
 ```
 npx twin-cli init
@@ -32,6 +32,8 @@ export OPENROUTER_API_KEY="your-key-here"
 
 # 2. Create your twin
 npx twin-cli init
+# → Asks your name, then 5 questions about how you build
+# → Generates dru.twin (or whatever your name is)
 
 # 3. Generate your first plan
 npx twin-cli plan
@@ -51,12 +53,12 @@ This is the core workflow. Your twin drives the cycle:
 3. **Build** — hand `prd.json` to your agent, or paste `tasks.md` into any AI chat
 4. **`twin plan`** again — your twin sees what exists and plans what's next
 
-Each time you run `plan`, it reads your `.twin`, your `product.md`, and any existing `tasks.md` to avoid duplicates and keep building forward. Your taste stays consistent across every iteration.
+Each time you run `plan`, it reads your `name.twin`, your `product.md`, and any existing `tasks.md` to avoid duplicates and keep building forward. Your taste stays consistent across every iteration.
 
 ## Commands
 
 ### `twin init`
-Answer 5 questions about how you build things. Generates your `.twin` file — your decision-making DNA.
+Asks your name, then 5 questions about how you build things. Generates `yourname.twin` — your decision-making DNA.
 
 ### `twin plan`
 Reads your `.twin` file + project context, generates 3-5 atomic tasks that match your taste.

@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve, basename } from 'node:path';
 import { requireKey, checkKey, callLLM } from './llm.js';
 import { createPrompter } from './prompt.js';
@@ -92,13 +92,20 @@ export async function plan() {
   await checkKey(key);
   console.log('Connected.\n');
 
-  // Read .twin — required
-  const twinPath = resolve(process.cwd(), '.twin');
-  const twin = await readIfExists(twinPath);
-  if (!twin) {
+  // Find *.twin file — required
+  const cwd = process.cwd();
+  const files = await readdir(cwd);
+  const twinFiles = files.filter((f) => f.endsWith('.twin'));
+  if (twinFiles.length === 0) {
     console.error('No .twin file found. Run `twin init` first.\n');
     process.exit(1);
   }
+  if (twinFiles.length > 1) {
+    console.log(`Found multiple .twin files: ${twinFiles.join(', ')}. Using ${twinFiles[0]}.`);
+  }
+  const twinPath = resolve(cwd, twinFiles[0]);
+  const twin = await readFile(twinPath, 'utf-8');
+  console.log(`Using ${twinFiles[0]}\n`);
 
   // Read or bootstrap product.md
   const productPath = resolve(process.cwd(), 'product.md');

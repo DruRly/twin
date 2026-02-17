@@ -42,14 +42,15 @@ Rules:
 - Keep it under 80 lines total
 - No preamble, no explanation — just the .twin file content`;
 
-export async function generateTwin(apiKey, interviewText) {
+export async function generateTwin(apiKey, name, interviewText) {
   const content = await callLLM(
     apiKey,
     SYSTEM_PROMPT,
-    `Here are the interview answers. Generate the .twin file.\n\n${interviewText}`,
+    `The builder's name is ${name}.\n\nHere are the interview answers. Generate the .twin file.\n\n${interviewText}`,
   );
 
-  const outPath = resolve(process.cwd(), '.twin');
+  const filename = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.twin`;
+  const outPath = resolve(process.cwd(), filename);
   await writeFile(outPath, content, 'utf-8');
   console.log(`Done! Your twin file is at: ${outPath}`);
   console.log('\nDrop this file into any project and your AI tools will know your taste.');
