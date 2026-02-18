@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { runPlan } from './plan.js';
 
 const COMPLETION_SIGNAL = '<twin>STORY_COMPLETE</twin>';
 const ALL_DONE_SIGNAL = '<twin>ALL_COMPLETE</twin>';
@@ -212,13 +213,12 @@ function runIteration(prompt, cwd) {
   });
 }
 
-export async function build(maxStories = 3) {
+export async function build({ maxStories = 3, loop = false } = {}) {
   const cwd = process.cwd();
 
   // Find twin file
   const twinPath = await findTwinFile(cwd);
   const twinFilename = twinPath.split('/').pop();
-  const twinContent = await readFile(twinPath, 'utf-8');
 
   // Read prd.json — required
   const prdPath = resolve(cwd, 'prd.json');
@@ -231,34 +231,76 @@ export async function build(maxStories = 3) {
   // Check if there are open stories
   const prd = JSON.parse(prdContent);
   const openStories = prd.userStories.filter((s) => s.status !== 'done');
-  if (openStories.length === 0) {
+  if (openStories.length === 0 && !loop) {
     console.log('All stories are done. Plan the next batch:\n  npx twin-cli plan\n');
     process.exit(0);
   }
+  // In loop mode with no open stories, the while loop will trigger planning
 
-  const storiesThisRun = Math.min(maxStories, openStories.length);
-
-  console.log(`\n--- twin build ---`);
+  console.log(`\n--- twin build${loop ? ' --loop' : ''} ---`);
   console.log(`Using ${twinFilename}`);
-  console.log(`${openStories.length} stories remaining — building ${storiesThisRun}\n`);
+  if (loop) {
+    console.log(`Building up to ${maxStories} stories across plan cycles\n`);
+  } else {
+    const storiesThisRun = Math.min(maxStories, openStories.length);
+    console.log(`${openStories.length} stories remaining — building ${storiesThisRun}\n`);
+  }
 
-  for (let i = 1; i <= maxStories; i++) {
-    // Re-read prd.json each round (previous story may have updated it)
+  let totalBuilt = 0;
+  let cycle = 1;
+
+  while (totalBuilt < maxStories) {
+    // Re-read twin each cycle (user may tweak mid-run)
+    const twinContent = await readFile(twinPath, 'utf-8');
+
+    // Re-read prd.json (previous story or plan cycle may have updated it)
     const currentPrdContent = await readFile(prdPath, 'utf-8');
     const currentPrd = JSON.parse(currentPrdContent);
     const remaining = currentPrd.userStories.filter((s) => s.status !== 'done');
 
+    // No open stories — either plan more or exit
     if (remaining.length === 0) {
+      if (!loop) {
+        console.log(`\n${'='.repeat(60)}`);
+        console.log('  All stories complete!');
+        console.log(`${'='.repeat(60)}`);
+        console.log('\nNext step — plan more features:');
+        console.log('  npx twin-cli plan\n');
+        break;
+      }
+
+      // Loop mode — ask the twin to plan the next batch
       console.log(`\n${'='.repeat(60)}`);
-      console.log('  All stories complete!');
-      console.log(`${'='.repeat(60)}`);
-      console.log('\nNext step — plan more features:');
-      console.log('  npx twin-cli plan\n');
-      break;
+      console.log(`  Cycle ${cycle} complete — all stories done`);
+      console.log(`  Your twin is planning the next batch...`);
+      console.log(`${'='.repeat(60)}\n`);
+
+      const newStories = await runPlan(cwd);
+
+      if (newStories.length === 0) {
+        console.log(`\n${'='.repeat(60)}`);
+        console.log('  Your twin has built everything it would build right now.');
+        console.log(`${'='.repeat(60)}`);
+        console.log(`\n${totalBuilt} stories built across ${cycle} cycle${cycle === 1 ? '' : 's'}.\n`);
+        break;
+      }
+
+      console.log(`Planned ${newStories.length} new stories:`);
+      for (const story of newStories) {
+        console.log(`  ${story.id}. ${story.title}`);
+      }
+      console.log('');
+      cycle++;
+      continue; // Back to top of while loop to build them
     }
 
+    // Build one story
+    totalBuilt++;
+    const storyNum = totalBuilt;
+    const cap = loop ? maxStories : Math.min(maxStories, openStories.length);
+
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`  Story ${i} of ${storiesThisRun}`);
+    console.log(`  Story ${storyNum} of ${cap}`);
     console.log(`${'='.repeat(60)}\n`);
 
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
@@ -270,32 +312,17 @@ export async function build(maxStories = 3) {
       continue;
     }
 
-    // Check if all done
-    if (output.includes(ALL_DONE_SIGNAL)) {
-      console.log(`\n${'='.repeat(60)}`);
-      console.log('  All stories complete!');
-      console.log(`${'='.repeat(60)}`);
-      console.log('\nNext step — plan more features:');
-      console.log('  npx twin-cli plan\n');
-      break;
-    }
-
-    if (output.includes(COMPLETION_SIGNAL)) {
+    if (output.includes(COMPLETION_SIGNAL) || output.includes(ALL_DONE_SIGNAL)) {
       const afterPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
       const left = afterPrd.userStories.filter((s) => s.status !== 'done');
-      if (left.length === 0) {
-        console.log(`\n${'='.repeat(60)}`);
-        console.log('  All stories complete!');
-        console.log(`${'='.repeat(60)}`);
-        console.log('\nNext step — plan more features:');
-        console.log('  npx twin-cli plan\n');
-        break;
+      if (left.length > 0) {
+        console.log(`\nStory done. ${left.length} remaining.\n`);
       }
-      console.log(`\nStory done. ${left.length} remaining.\n`);
+      // If left.length === 0, the top of the while loop handles it
     }
+  }
 
-    if (i === maxStories) {
-      console.log(`\nBuilt ${maxStories} stories. Keep going:\n  npx twin-cli build\n`);
-    }
+  if (totalBuilt >= maxStories) {
+    console.log(`\nBuilt ${totalBuilt} stories.${loop ? '' : ' Keep going:\n  npx twin-cli build'}\n`);
   }
 }

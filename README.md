@@ -141,6 +141,8 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 ```bash
 twin build              # default: 3 stories
 twin build --stories 5  # build more in one run
+twin build --loop       # fully autonomous: build → plan → build → plan
+twin build --loop --stories 20  # autonomous with a ceiling
 ```
 
 Requires Claude Code installed and available in your PATH.

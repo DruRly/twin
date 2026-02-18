@@ -71,6 +71,73 @@ function parseLLMJson(raw) {
   return JSON.parse(cleaned);
 }
 
+/**
+ * Headless plan — callable from the build loop.
+ * Requires product.md and a .twin file to already exist.
+ * Returns the array of NEW stories added (empty if the twin has nothing to add).
+ */
+export async function runPlan(cwd) {
+  const files = await readdir(cwd);
+  const twinFiles = files.filter((f) => f.endsWith('.twin'));
+  if (twinFiles.length === 0) return [];
+
+  const twinPath = resolve(cwd, twinFiles[0]);
+  const twin = await readFile(twinPath, 'utf-8');
+
+  const productPath = resolve(cwd, 'product.md');
+  const product = await readIfExists(productPath);
+  if (!product) return []; // Can't plan without product context
+
+  const statusPath = resolve(cwd, 'status.md');
+  const prdPath = resolve(cwd, 'prd.json');
+  const status = await readIfExists(statusPath);
+  const existingPrd = await readIfExists(prdPath);
+
+  let userMessage = `## .twin file\n${twin}\n\n## product.md\n${product}`;
+  if (status) {
+    userMessage += `\n\n## status.md\n${status}`;
+  }
+  if (existingPrd) {
+    userMessage += `\n\n## Existing prd.json (do NOT duplicate these stories)\n${existingPrd}`;
+  }
+  userMessage += '\n\nGenerate the next 3-5 capabilities as JSON.';
+
+  const raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
+
+  let prd;
+  try {
+    prd = parseLLMJson(raw);
+  } catch {
+    return [];
+  }
+
+  if (!prd.project) {
+    prd.project = basename(cwd);
+  }
+
+  const newStories = prd.userStories || [];
+
+  // Merge with existing stories
+  if (existingPrd) {
+    try {
+      const existing = JSON.parse(existingPrd);
+      const existingStories = existing.userStories || [];
+      prd.userStories = [...existingStories, ...newStories];
+      if (!prd.project && existing.project) prd.project = existing.project;
+      if (!prd.description && existing.description) prd.description = existing.description;
+    } catch {
+      // If existing prd.json is malformed, just use the new one
+    }
+  }
+
+  await writeFile(prdPath, JSON.stringify(prd, null, 2) + '\n', 'utf-8');
+  return newStories;
+}
+
+/**
+ * Interactive plan — called from `twin plan` CLI command.
+ * Bootstraps product.md if missing, prints stories to console.
+ */
 export async function plan() {
   // Find *.twin file — required
   const cwd = process.cwd();
@@ -83,71 +150,27 @@ export async function plan() {
   if (twinFiles.length > 1) {
     console.log(`Found multiple .twin files: ${twinFiles.join(', ')}. Using ${twinFiles[0]}.`);
   }
-  const twinPath = resolve(cwd, twinFiles[0]);
-  const twin = await readFile(twinPath, 'utf-8');
   console.log(`Using ${twinFiles[0]}\n`);
 
   // Read or bootstrap product.md
-  const productPath = resolve(process.cwd(), 'product.md');
+  const productPath = resolve(cwd, 'product.md');
   let product = await readIfExists(productPath);
   if (!product) {
     product = await bootstrapProduct();
   }
 
-  // Read optional context files
-  const statusPath = resolve(process.cwd(), 'status.md');
-  const prdPath = resolve(process.cwd(), 'prd.json');
-  const status = await readIfExists(statusPath);
-  const existingPrd = await readIfExists(prdPath);
-
-  // Assemble user message
-  let userMessage = `## .twin file\n${twin}\n\n## product.md\n${product}`;
-  if (status) {
-    userMessage += `\n\n## status.md\n${status}`;
-  }
-  if (existingPrd) {
-    userMessage += `\n\n## Existing prd.json (do NOT duplicate these stories)\n${existingPrd}`;
-  }
-  userMessage += '\n\nGenerate the next 3-5 capabilities as JSON.';
-
   console.log('--- twin plan ---');
   console.log('Your twin is deciding what to build next...\n');
 
-  const raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
+  const newStories = await runPlan(cwd);
 
-  // Parse structured output
-  let prd;
-  try {
-    prd = parseLLMJson(raw);
-  } catch (e) {
-    console.error('Failed to parse LLM response as JSON. Raw output:\n');
-    console.error(raw);
-    process.exit(1);
+  if (newStories.length === 0) {
+    console.log('Your twin has nothing to add right now.\n');
+    return;
   }
 
-  // Derive project name from cwd if LLM didn't provide one
-  if (!prd.project) {
-    prd.project = basename(process.cwd());
-  }
-
-  // Merge with existing stories if prd.json already exists
-  if (existingPrd) {
-    try {
-      const existing = JSON.parse(existingPrd);
-      const existingStories = existing.userStories || [];
-      prd.userStories = [...existingStories, ...prd.userStories];
-      if (!prd.project && existing.project) prd.project = existing.project;
-      if (!prd.description && existing.description) prd.description = existing.description;
-    } catch {
-      // If existing prd.json is malformed, just use the new one
-    }
-  }
-
-  // Write prd.json
-  await writeFile(prdPath, JSON.stringify(prd, null, 2) + '\n', 'utf-8');
-
-  // Print stories to console
-  for (const story of prd.userStories) {
+  // Print new stories to console
+  for (const story of newStories) {
     console.log(`${story.id}. ${story.title}`);
     console.log(`   ${story.description}`);
     for (const ac of story.acceptanceCriteria) {
@@ -155,6 +178,8 @@ export async function plan() {
     }
     console.log('');
   }
+
+  const prdPath = resolve(cwd, 'prd.json');
   console.log(`---`);
   console.log(`Wrote ${prdPath}`);
   console.log(`\nNext step — let your twin build it:`);
