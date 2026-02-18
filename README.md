@@ -167,6 +167,10 @@ The twin encodes how you think. The project files encode what you are building. 
 
 `twin tweak` for natural language updates. `twin share` for publishing your taste publicly.
 
+## Notes
+
+**macOS users:** You may see a brief system popup the first time `twin build` spawns Claude Code. This is macOS verifying the process. It auto-dismisses. To prevent it, enable your terminal app under System Settings → Privacy & Security → Developer Tools.
+
 ## License
 
 MIT
