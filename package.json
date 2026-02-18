@@ -1,6 +1,6 @@
 {
   "name": "twin-cli",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Your twin builds while you sleep. Not human in the loop. Twin in the loop.",
   "type": "module",
   "bin": {
