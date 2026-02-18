@@ -77,7 +77,7 @@ export async function plan() {
   const files = await readdir(cwd);
   const twinFiles = files.filter((f) => f.endsWith('.twin'));
   if (twinFiles.length === 0) {
-    console.error('No .twin file found. Run `twin init` first.\n');
+    console.error('No .twin file found. Run `npx twin-cli init` first.\n');
     process.exit(1);
   }
   if (twinFiles.length > 1) {
@@ -111,7 +111,7 @@ export async function plan() {
   userMessage += '\n\nGenerate the next 3-5 capabilities as JSON.';
 
   console.log('--- twin plan ---');
-  console.log('Generating tasks that match your taste...\n');
+  console.log('Your twin is deciding what to build next...\n');
 
   const raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
 
@@ -157,5 +157,6 @@ export async function plan() {
   }
   console.log(`---`);
   console.log(`Wrote ${prdPath}`);
-  console.log(`\nRun \`twin build\` to start building.`);
+  console.log(`\nNext step — let your twin build it:`);
+  console.log(`  npx twin-cli build`);
 }

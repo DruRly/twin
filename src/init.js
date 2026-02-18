@@ -25,7 +25,8 @@ export async function init() {
   }
   prompter.close();
 
-  console.log('\nGenerating your .twin file...\n');
+  const filename = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.twin`;
+  console.log(`\nGenerating ${filename}...\n`);
 
   const paired = answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
   await generateTwin(name, paired);

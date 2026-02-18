@@ -51,7 +51,7 @@ export async function generateTwin(name, interviewText) {
   const filename = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.twin`;
   const outPath = resolve(process.cwd(), filename);
   await writeFile(outPath, content, 'utf-8');
-  console.log(`Done! Your twin file is at: ${outPath}`);
-  console.log('\nNext step — plan what to build:');
-  console.log('  twin plan');
+  console.log(`Done! Created ${filename}\n`);
+  console.log('Next step — plan what to build:');
+  console.log('  npx twin-cli plan');
 }

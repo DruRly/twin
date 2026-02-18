@@ -17,7 +17,7 @@ async function findTwinFile(cwd) {
   const files = await readdir(cwd);
   const twinFiles = files.filter((f) => f.endsWith('.twin'));
   if (twinFiles.length === 0) {
-    console.error('No .twin file found. Run `twin init` first.\n');
+    console.error('No .twin file found. Run `npx twin-cli init` first.\n');
     process.exit(1);
   }
   return resolve(cwd, twinFiles[0]);
@@ -211,7 +211,7 @@ export async function build(maxIterations = 5) {
   const prdPath = resolve(cwd, 'prd.json');
   const prdContent = await readIfExists(prdPath);
   if (!prdContent) {
-    console.error('No prd.json found. Run `twin plan` first.\n');
+    console.error('No prd.json found. Run `npx twin-cli plan` first.\n');
     process.exit(1);
   }
 
@@ -219,7 +219,7 @@ export async function build(maxIterations = 5) {
   const prd = JSON.parse(prdContent);
   const openStories = prd.userStories.filter((s) => s.status !== 'done');
   if (openStories.length === 0) {
-    console.log('All stories in prd.json are already done. Run `twin plan` to generate more.\n');
+    console.log('All stories are done. Plan the next batch:\n  npx twin-cli plan\n');
     process.exit(0);
   }
 
@@ -250,7 +250,7 @@ export async function build(maxIterations = 5) {
       console.log('  All stories complete!');
       console.log(`${'='.repeat(60)}`);
       console.log('\nNext step — plan more features:');
-      console.log('  twin plan\n');
+      console.log('  npx twin-cli plan\n');
       break;
     }
 
@@ -263,14 +263,14 @@ export async function build(maxIterations = 5) {
         console.log('  All stories complete!');
         console.log(`${'='.repeat(60)}`);
         console.log('\nNext step — plan more features:');
-        console.log('  twin plan\n');
+        console.log('  npx twin-cli plan\n');
         break;
       }
       console.log(`\nStory complete. ${remaining.length} remaining.\n`);
     }
 
     if (i === maxIterations) {
-      console.log(`\nReached max iterations (${maxIterations}). Run \`twin build\` again to continue.\n`);
+      console.log(`\nReached max iterations (${maxIterations}). Keep going:\n  npx twin-cli build\n`);
     }
   }
 }
