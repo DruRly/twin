@@ -375,7 +375,7 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
       const afterPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
       const left = afterPrd.userStories.filter((s) => s.status !== 'done');
       if (left.length > 0) {
-        console.log(dim(`\nStory done. ${left.length} remaining.\n`));
+        console.log(dim(`\nStory done. ${left.length} open in prd.json.\n`));
       }
       // If left.length === 0, the top of the while loop handles it
     }
