@@ -106,6 +106,7 @@ function runIteration(prompt, cwd) {
     let buffer = '';
     let lastActivity = Date.now();
     let statusLine = false; // true when a status line is showing
+    let atLineStart = true; // track if cursor is at start of a line
 
     const TOOL_LABELS = {
       Read: 'Reading file',
@@ -124,6 +125,10 @@ function runIteration(prompt, cwd) {
     }
 
     function showStatus(msg) {
+      if (!atLineStart && !statusLine) {
+        process.stdout.write('\n');
+        atLineStart = true;
+      }
       clearStatus();
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       process.stdout.write(`\r\x1b[2m${msg} (${elapsed}s)\x1b[0m`);
@@ -156,6 +161,7 @@ function runIteration(prompt, cwd) {
           clearStatus();
           process.stdout.write(event.text);
           output += event.text;
+          atLineStart = event.text.endsWith('\n');
         } else if (event.type === 'tool') {
           const label = TOOL_LABELS[event.name] || event.name;
           showStatus(label);
