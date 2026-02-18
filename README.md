@@ -139,8 +139,8 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 - Repeats until all stories are done or max iterations hit
 
 ```bash
-twin build                     # default: 5 iterations
-twin build --max-iterations 10 # custom limit
+twin build              # default: 3 stories
+twin build --stories 5  # build more in one run
 ```
 
 Requires Claude Code installed and available in your PATH.

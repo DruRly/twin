@@ -29,22 +29,23 @@ function buildPrompt(twinContent, twinFilename, prdContent, progressContent) {
 1. **The twin file** (${twinFilename}) — this is the builder's taste, their decision-making DNA. Build the way they would build.
 2. **prd.json** — the product requirements with user stories. Each story has a status: "open", "in_progress", or "done".
 
-${progressContent ? '3. **progress.md** — notes from previous build iterations. Read this to understand what was already tried and learned.\n' : ''}
+${progressContent ? '3. **progress.md** — notes from previous build runs. Read this to understand what was already tried and learned.\n' : ''}
 ## Your task
 
 1. Read prd.json and find stories that are not "done"
-2. Pick the story YOU think should be built next based on the twin's taste and what makes sense given the current state of the codebase
-3. Build it. Write real, working code. Follow the acceptance criteria.
+2. Pick ONE story — the single story YOU think should be built next based on the twin's taste and the current state of the codebase
+3. Build that ONE story. Write real, working code. Follow the acceptance criteria.
 4. When the story's acceptance criteria are met, update prd.json: set that story's status to "done" and add "completedAt" with the current ISO timestamp
-5. Append to progress.md what you built, what files changed, and any learnings for future iterations
-6. Output ${COMPLETION_SIGNAL} when you finish a story
-7. If ALL stories in prd.json are "done", output ${ALL_DONE_SIGNAL} instead
+5. Append to progress.md what you built, what files changed, and any learnings
+6. Commit your work with a clear message
+7. Output ${COMPLETION_SIGNAL} when you finish the story
+8. If ALL stories in prd.json are "done" after completing yours, output ${ALL_DONE_SIGNAL} instead
 
 ## Rules
+- Build ONE story per run. Do not start a second story.
 - Build real features, not stubs
 - Follow the taste in the twin file — it tells you how this person builds
-- Commit your work with a clear message after completing a story
-- If you get stuck, note what blocked you in progress.md and move on to a different story
+- If you get stuck, note what blocked you in progress.md and output ${COMPLETION_SIGNAL} anyway
 - Do NOT ask questions. Make decisions based on the twin and the PRD.
 
 ## Twin file (${twinFilename})
@@ -205,7 +206,7 @@ function runIteration(prompt, cwd) {
   });
 }
 
-export async function build(maxIterations = 5) {
+export async function build(maxStories = 3) {
   const cwd = process.cwd();
 
   // Find twin file
@@ -229,28 +230,41 @@ export async function build(maxIterations = 5) {
     process.exit(0);
   }
 
+  const storiesThisRun = Math.min(maxStories, openStories.length);
+
   console.log(`\n--- twin build ---`);
   console.log(`Using ${twinFilename}`);
-  console.log(`${openStories.length} stories remaining in prd.json`);
-  console.log(`Max iterations: ${maxIterations}\n`);
+  console.log(`${openStories.length} stories remaining — building ${storiesThisRun}\n`);
 
-  for (let i = 1; i <= maxIterations; i++) {
+  for (let i = 1; i <= maxStories; i++) {
+    // Re-read prd.json each round (previous story may have updated it)
+    const currentPrdContent = await readFile(prdPath, 'utf-8');
+    const currentPrd = JSON.parse(currentPrdContent);
+    const remaining = currentPrd.userStories.filter((s) => s.status !== 'done');
+
+    if (remaining.length === 0) {
+      console.log(`\n${'='.repeat(60)}`);
+      console.log('  All stories complete!');
+      console.log(`${'='.repeat(60)}`);
+      console.log('\nNext step — plan more features:');
+      console.log('  npx twin-cli plan\n');
+      break;
+    }
+
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`  Iteration ${i} of ${maxIterations}`);
+    console.log(`  Story ${i} of ${storiesThisRun}`);
     console.log(`${'='.repeat(60)}\n`);
 
-    // Re-read files each iteration (they may have been updated)
-    const currentPrd = await readFile(prdPath, 'utf-8');
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
-
-    const prompt = buildPrompt(twinContent, twinFilename, currentPrd, progressContent);
+    const prompt = buildPrompt(twinContent, twinFilename, currentPrdContent, progressContent);
     const { output, code } = await runIteration(prompt, cwd);
 
     if (code !== 0) {
-      console.log(`\nClaude exited with code ${code}. Continuing to next iteration...\n`);
+      console.log(`\nClaude exited with code ${code}. Moving to next story...\n`);
+      continue;
     }
 
-    // Check completion signals
+    // Check if all done
     if (output.includes(ALL_DONE_SIGNAL)) {
       console.log(`\n${'='.repeat(60)}`);
       console.log('  All stories complete!');
@@ -261,10 +275,9 @@ export async function build(maxIterations = 5) {
     }
 
     if (output.includes(COMPLETION_SIGNAL)) {
-      // Re-read PRD to check remaining stories
-      const updatedPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
-      const remaining = updatedPrd.userStories.filter((s) => s.status !== 'done');
-      if (remaining.length === 0) {
+      const afterPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
+      const left = afterPrd.userStories.filter((s) => s.status !== 'done');
+      if (left.length === 0) {
         console.log(`\n${'='.repeat(60)}`);
         console.log('  All stories complete!');
         console.log(`${'='.repeat(60)}`);
@@ -272,11 +285,11 @@ export async function build(maxIterations = 5) {
         console.log('  npx twin-cli plan\n');
         break;
       }
-      console.log(`\nStory complete. ${remaining.length} remaining.\n`);
+      console.log(`\nStory done. ${left.length} remaining.\n`);
     }
 
-    if (i === maxIterations) {
-      console.log(`\nReached max iterations (${maxIterations}). Keep going:\n  npx twin-cli build\n`);
+    if (i === maxStories) {
+      console.log(`\nBuilt ${maxStories} stories. Keep going:\n  npx twin-cli build\n`);
     }
   }
 }
