@@ -160,9 +160,15 @@ function runIteration(prompt, cwd) {
 
         if (event.type === 'text') {
           clearStatus();
-          process.stdout.write(event.text);
           output += event.text;
-          atLineStart = event.text.endsWith('\n');
+          // Hide completion signals from user — they're internal plumbing
+          const display = event.text
+            .replace(COMPLETION_SIGNAL, '')
+            .replace(ALL_DONE_SIGNAL, '');
+          if (display) {
+            process.stdout.write(display);
+            atLineStart = display.endsWith('\n');
+          }
         } else if (event.type === 'tool') {
           const label = TOOL_LABELS[event.name] || event.name;
           showStatus(label);
