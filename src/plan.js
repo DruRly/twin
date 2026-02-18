@@ -62,6 +62,13 @@ async function bootstrapProduct() {
   return content;
 }
 
+const PLAN_RETRIES = 2;
+const PLAN_RETRY_DELAY = 15_000; // 15s
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function parseLLMJson(raw) {
   // Strip markdown code fences if the LLM wraps its response
   let cleaned = raw.trim();
@@ -102,7 +109,21 @@ export async function runPlan(cwd) {
   }
   userMessage += '\n\nGenerate the next 3-5 capabilities as JSON.';
 
-  const raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
+  let raw;
+  for (let attempt = 0; attempt <= PLAN_RETRIES; attempt++) {
+    try {
+      raw = await callLLM(TASK_SYSTEM_PROMPT, userMessage);
+      break;
+    } catch (err) {
+      if (attempt < PLAN_RETRIES) {
+        console.log(`\x1b[2m  API error — retrying plan in ${PLAN_RETRY_DELAY / 1000}s...\x1b[0m`);
+        await sleep(PLAN_RETRY_DELAY);
+      } else {
+        console.error(`Planning failed after ${PLAN_RETRIES + 1} attempts: ${err.message}`);
+        return [];
+      }
+    }
+  }
 
   let prd;
   try {

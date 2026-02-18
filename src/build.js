@@ -218,6 +218,13 @@ const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s) => `\x1b[1m${s}\x1b[0m`;
 const bar = dim('─'.repeat(60));
 
+const STORY_RETRIES = 2;
+const STORY_RETRY_DELAYS = [10_000, 30_000]; // 10s, then 30s
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function summary(totalBuilt, cycles, elapsed) {
   const mins = Math.round(elapsed / 60000);
   const time = mins > 0 ? ` in ${mins}m` : '';
@@ -350,35 +357,54 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     }
 
     // Build one story
-    totalBuilt++;
+    const storyNum = totalBuilt + 1;
 
     console.log('');
     console.log(bar);
     if (maxStories === Infinity) {
-      console.log(bold(`  Story ${totalBuilt}`));
+      console.log(bold(`  Story ${storyNum}`));
     } else {
-      console.log(bold(`  Story ${totalBuilt} of ${maxStories}`));
+      console.log(bold(`  Story ${storyNum} of ${maxStories}`));
     }
     console.log(bar);
     console.log('');
 
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
     const prompt = buildPrompt(twinContent, twinFilename, currentPrdContent, progressContent);
-    const { output, code } = await runIteration(prompt, cwd);
 
-    if (code !== 0) {
-      console.log(dim(`\nClaude exited with code ${code}. Moving to next story...\n`));
-      continue;
-    }
-
-    if (output.includes(COMPLETION_SIGNAL) || output.includes(ALL_DONE_SIGNAL)) {
-      const afterPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
-      const left = afterPrd.userStories.filter((s) => s.status !== 'done');
-      if (left.length > 0) {
-        console.log(dim(`\nStory done. ${left.length} open in prd.json.\n`));
+    let succeeded = false;
+    for (let attempt = 0; attempt <= STORY_RETRIES; attempt++) {
+      if (attempt > 0) {
+        const delay = STORY_RETRY_DELAYS[attempt - 1];
+        console.log(dim(`\n  API error — retrying in ${delay / 1000}s...\n`));
+        await sleep(delay);
       }
-      // If left.length === 0, the top of the while loop handles it
+
+      const { output, code } = await runIteration(prompt, cwd);
+
+      if (code !== 0) {
+        if (attempt < STORY_RETRIES) continue; // retry
+        console.log(dim(`\nClaude exited with code ${code} after ${STORY_RETRIES + 1} attempts. Skipping story.\n`));
+        // Log the failure to progress.md so the next run knows
+        const progressPath = resolve(cwd, 'progress.md');
+        const existing = await readIfExists(progressPath) || '';
+        const note = `\n## Skipped story (${new Date().toISOString()})\nClaude exited with code ${code} after ${STORY_RETRIES + 1} attempts. Story was not counted.\n`;
+        await writeFile(progressPath, existing + note, 'utf-8');
+        break;
+      }
+
+      succeeded = true;
+      if (output.includes(COMPLETION_SIGNAL) || output.includes(ALL_DONE_SIGNAL)) {
+        const afterPrd = JSON.parse(await readFile(prdPath, 'utf-8'));
+        const left = afterPrd.userStories.filter((s) => s.status !== 'done');
+        if (left.length > 0) {
+          console.log(dim(`\nStory done. ${left.length} open in prd.json.\n`));
+        }
+      }
+      break;
     }
+
+    if (succeeded) totalBuilt++;
   }
 
   if (totalBuilt > 0 && totalBuilt >= maxStories) {

@@ -43,10 +43,16 @@ Rules:
 - No preamble, no explanation — just the .twin file content`;
 
 export async function generateTwin(name, interviewText) {
-  const content = await callLLM(
-    SYSTEM_PROMPT,
-    `The builder's name is ${name}.\n\nHere are the interview answers. Generate the .twin file.\n\n${interviewText}`,
-  );
+  let content;
+  try {
+    content = await callLLM(
+      SYSTEM_PROMPT,
+      `The builder's name is ${name}.\n\nHere are the interview answers. Generate the .twin file.\n\n${interviewText}`,
+    );
+  } catch (err) {
+    console.error(`\n${err.message}\n`);
+    process.exit(1);
+  }
 
   const filename = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.twin`;
   const outPath = resolve(process.cwd(), filename);
