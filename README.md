@@ -139,10 +139,10 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 - Repeats until all stories are done or max iterations hit
 
 ```bash
-twin build              # default: 3 stories
-twin build --stories 5  # build more in one run
-twin build --loop       # fully autonomous: build → plan → build → plan
-twin build --loop --stories 20  # autonomous with a ceiling
+twin build                       # build the current stories (default: 3)
+twin build --loop                # build, plan, build — fully autonomous
+twin build --loop --stories 20   # stop after 20 stories
+twin build --loop --minutes 30   # stop after 30 minutes
 ```
 
 Requires Claude Code installed and available in your PATH.

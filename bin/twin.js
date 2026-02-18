@@ -19,8 +19,10 @@ if (!command || command === 'init') {
 } else if (command === 'build') {
   const loop = process.argv.includes('--loop');
   const storiesFlag = parseFlag('--stories', null);
+  const minutesFlag = parseFlag('--minutes', null);
   const maxStories = storiesFlag ? parseInt(storiesFlag, 10) : (loop ? Infinity : 3);
-  build({ maxStories, loop });
+  const maxMinutes = minutesFlag ? parseInt(minutesFlag, 10) : null;
+  build({ maxStories, loop, maxMinutes });
 } else if (command === '--help' || command === '-h') {
   console.log(`
 twin - your twin builds while you sleep
@@ -30,7 +32,8 @@ Usage:
   twin plan                  Your twin decides what to build next
   twin build [--stories N]   Build N stories using Claude Code (default: 3)
   twin build --loop          Build, plan, build — fully autonomous
-  twin build --loop --stories 20  Autonomous with a story ceiling
+  twin build --loop --stories 20  Stop after 20 stories
+  twin build --loop --minutes 30  Stop after 30 minutes
   twin --help                Show this message
 `);
 } else {

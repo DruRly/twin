@@ -213,8 +213,10 @@ function runIteration(prompt, cwd) {
   });
 }
 
-export async function build({ maxStories = 3, loop = false } = {}) {
+export async function build({ maxStories = 3, loop = false, maxMinutes = null } = {}) {
   const cwd = process.cwd();
+  const startTime = Date.now();
+  const timeLimitMs = maxMinutes ? maxMinutes * 60 * 1000 : null;
 
   // Find twin file
   const twinPath = await findTwinFile(cwd);
@@ -240,7 +242,10 @@ export async function build({ maxStories = 3, loop = false } = {}) {
   console.log(`\n--- twin build${loop ? ' --loop' : ''} ---`);
   console.log(`Using ${twinFilename}`);
   if (loop) {
-    const cap = maxStories === Infinity ? 'no limit' : `up to ${maxStories} stories`;
+    const limits = [];
+    if (maxStories !== Infinity) limits.push(`${maxStories} stories`);
+    if (maxMinutes) limits.push(`${maxMinutes} minutes`);
+    const cap = limits.length > 0 ? `stops after ${limits.join(' or ')}` : 'no limit';
     console.log(`Autonomous mode — ${cap}\n`);
   } else {
     const storiesThisRun = Math.min(maxStories, openStories.length);
@@ -295,14 +300,21 @@ export async function build({ maxStories = 3, loop = false } = {}) {
       continue; // Back to top of while loop to build them
     }
 
+    // Check time limit before starting next story
+    if (timeLimitMs && (Date.now() - startTime) >= timeLimitMs) {
+      const mins = Math.round((Date.now() - startTime) / 60000);
+      console.log(`\nTime limit reached (${mins} minutes). ${totalBuilt} stories built.\n`);
+      break;
+    }
+
     // Build one story
     totalBuilt++;
 
     console.log(`\n${'='.repeat(60)}`);
-    if (loop) {
-      console.log(`  Story ${totalBuilt}${maxStories !== Infinity ? ` (limit: ${maxStories})` : ''}`);
+    if (maxStories === Infinity) {
+      console.log(`  Story ${totalBuilt}`);
     } else {
-      console.log(`  Story ${totalBuilt} of ${Math.min(maxStories, openStories.length)}`);
+      console.log(`  Story ${totalBuilt} of ${maxStories}`);
     }
     console.log(`${'='.repeat(60)}\n`);
 
