@@ -240,7 +240,8 @@ export async function build({ maxStories = 3, loop = false } = {}) {
   console.log(`\n--- twin build${loop ? ' --loop' : ''} ---`);
   console.log(`Using ${twinFilename}`);
   if (loop) {
-    console.log(`Building up to ${maxStories} stories across plan cycles\n`);
+    const cap = maxStories === Infinity ? 'no limit' : `up to ${maxStories} stories`;
+    console.log(`Autonomous mode — ${cap}\n`);
   } else {
     const storiesThisRun = Math.min(maxStories, openStories.length);
     console.log(`${openStories.length} stories remaining — building ${storiesThisRun}\n`);
@@ -296,11 +297,13 @@ export async function build({ maxStories = 3, loop = false } = {}) {
 
     // Build one story
     totalBuilt++;
-    const storyNum = totalBuilt;
-    const cap = loop ? maxStories : Math.min(maxStories, openStories.length);
 
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`  Story ${storyNum} of ${cap}`);
+    if (loop) {
+      console.log(`  Story ${totalBuilt}${maxStories !== Infinity ? ` (limit: ${maxStories})` : ''}`);
+    } else {
+      console.log(`  Story ${totalBuilt} of ${Math.min(maxStories, openStories.length)}`);
+    }
     console.log(`${'='.repeat(60)}\n`);
 
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
@@ -322,7 +325,7 @@ export async function build({ maxStories = 3, loop = false } = {}) {
     }
   }
 
-  if (totalBuilt >= maxStories) {
+  if (totalBuilt > 0 && totalBuilt >= maxStories) {
     console.log(`\nBuilt ${totalBuilt} stories.${loop ? '' : ' Keep going:\n  npx twin-cli build'}\n`);
   }
 }

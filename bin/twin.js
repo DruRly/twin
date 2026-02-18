@@ -17,8 +17,9 @@ if (!command || command === 'init') {
 } else if (command === 'plan') {
   plan();
 } else if (command === 'build') {
-  const maxStories = parseInt(parseFlag('--stories', '3'), 10);
   const loop = process.argv.includes('--loop');
+  const storiesFlag = parseFlag('--stories', null);
+  const maxStories = storiesFlag ? parseInt(storiesFlag, 10) : (loop ? Infinity : 3);
   build({ maxStories, loop });
 } else if (command === '--help' || command === '-h') {
   console.log(`
