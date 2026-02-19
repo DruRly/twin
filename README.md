@@ -33,6 +33,8 @@ Run `twin plan` once and you get the next batch of features you would have chose
 - **Node.js 18+** — [nodejs.org](https://nodejs.org)
 - **Claude Code** — [docs.anthropic.com](https://docs.anthropic.com/en/docs/claude-code) (powers all three commands)
 
+Run everything with `npx twin-cli` — no global install needed. This keeps you on the latest version automatically.
+
 ## Quick Start
 
 Each twin project starts in its own folder. Create one, then run from inside it.
@@ -88,7 +90,7 @@ npx twin-cli plan
 npx twin-cli build
 ```
 
-Your `.twin` file is portable. Copy it into any new project and run `twin plan` to start.
+Your `.twin` file is portable. Copy it into any new project and run `npx twin-cli plan` to start.
 
 ## Project Ideas
 
@@ -139,10 +141,10 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 - Repeats until all stories are done or the story limit is hit
 
 ```bash
-twin build                       # build the current stories (default: 3)
-twin build --loop                # build, plan, build — fully autonomous
-twin build --loop --stories 20   # stop after 20 stories
-twin build --loop --minutes 30   # stop after 30 minutes
+npx twin-cli build                       # build the current stories (default: 3)
+npx twin-cli build --loop                # build, plan, build — fully autonomous
+npx twin-cli build --loop --stories 20   # stop after 20 stories
+npx twin-cli build --loop --minutes 30   # stop after 30 minutes
 ```
 
 Requires Claude Code installed and available in your PATH.
