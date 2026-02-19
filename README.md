@@ -2,7 +2,7 @@
 
 Old TDD meant write the tests first. New TDD means write the twin first.
 
-A `.twin` file encodes how you think. Drop it into any project. Your AI does not wait for instructions. It decides what to build next and builds it. Not human in the loop. Twin in the loop.
+A `.twin` file is the `.env` for your taste. Drop it into any project. Your AI does not wait for instructions. It decides what to build next and builds it. Not human in the loop. Twin in the loop.
 
 ## The Problem
 
@@ -18,8 +18,8 @@ The root cause: agents do not know what you would build next. They can execute. 
 
 Three commands.
 
-```
-twin init     # encode how you think
+```bash
+twin init     # your taste, in a file
 twin plan     # your twin decides what to build next
 twin build    # your twin builds it without you
 ```
@@ -82,7 +82,7 @@ npx twin-cli build
 # → Picks the next story, builds it, marks it done
 # → You watch it happen in real time
 
-# Want more features? Plan again.
+# Want more? Plan again.
 npx twin-cli plan
 # → Sees what is done, generates the next batch
 npx twin-cli build
@@ -106,12 +106,12 @@ Twin works best on new projects. Some things to try:
 
 Your twin drives the whole cycle.
 
-1. **`twin init`** — encode how you think (once)
-2. **`twin plan`** — your twin generates tasks that match how you prioritize
+1. **`twin init`** — your taste, in a file (once)
+2. **`twin plan`** — your twin generates the next batch of stories, matched to how you prioritize
 3. **`twin build`** — your twin builds on its own, updating `prd.json` as stories complete
 4. **`twin plan` again** — your twin reads what shipped and decides what comes next
 
-You did not write a task list. The twin wrote it. You did not pick the next feature. The twin picked it. That is the shift: from reactive to proactive.
+You did not write a task list. Your twin wrote it. You did not pick the next feature. Your twin picked it.
 
 Each iteration, Claude Code starts fresh but reads the files on disk. Your twin. The PRD. A progress log. The files are the memory. Your taste stays consistent across runs.
 
@@ -119,7 +119,7 @@ Each iteration, Claude Code starts fresh but reads the files on disk. Your twin.
 
 ### `twin init`
 
-Asks your name, then 5 questions about how you build things. Generates `yourname.twin`.
+Asks your name, then 5 questions about how you build. Generates `yourname.twin`.
 
 ### `twin plan`
 
@@ -136,7 +136,7 @@ Runs an autonomous build loop using Claude Code. Each iteration:
 - Picks the next story to build (guided by your taste)
 - Builds it, commits, and marks it done in `prd.json`
 - Appends learnings to `progress.md`
-- Repeats until all stories are done or max iterations hit
+- Repeats until all stories are done or the story limit is hit
 
 ```bash
 twin build                       # build the current stories (default: 3)
@@ -161,11 +161,7 @@ Requires Claude Code installed and available in your PATH.
 - Your tech stack (that goes in project config)
 - Your roadmap (that goes in a PRD)
 
-The twin encodes how you think. The project files encode what you are building. The twin is the founder. The project files are the company.
-
-## What Comes Next
-
-`twin tweak` for natural language updates. `twin share` for publishing your taste publicly.
+The twin holds your taste. The project files hold what you are building. The twin is the founder. The project files are the company.
 
 ## Notes
 
