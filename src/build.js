@@ -249,9 +249,8 @@ async function processSteer(cwd, twinPath, prdPath) {
       '',
       'Output JSON with this exact shape:',
       '{',
-      '  "newStories": [],     // stories to add to prd.json (id, title, userStory, acceptanceCriteria array, status:"open"), empty array if none',
-      '  "twinProposal": null, // proposed addition or refinement to twin file based on taste revealed by this steering, or null',
-      '  "cannotExtract": null // reason no taste signal could be extracted, or null if twinProposal is set',
+      '  "newStories": [],    // stories to add to prd.json (id, title, userStory, acceptanceCriteria array, status:"open"), empty array if none',
+      '  "twinAppend": null   // text to append to the twin file if this input reveals something clear about the developer\'s taste, or null if nothing clear can be inferred',
       '}',
     ].join('\n')
   );
@@ -273,17 +272,10 @@ async function processSteer(cwd, twinPath, prdPath) {
     }
   }
 
-  const proposalPath = resolve(cwd, 'twin-proposal.md');
-  const existing = await readIfExists(proposalPath) || '';
-  const steering = steerContent.trim().slice(0, 120) + (steerContent.trim().length > 120 ? '...' : '');
-
-  if (json.twinProposal) {
-    const entry = `\n## ${new Date().toISOString()}\n\n> "${steering}"\n\n${json.twinProposal}\n`;
-    await writeFile(proposalPath, existing + entry, 'utf-8');
-    console.log(dim('  Taste update proposed → twin-proposal.md'));
-  } else if (json.cannotExtract) {
-    const entry = `\n## ${new Date().toISOString()} — no taste signal\n\n> "${steering}"\n\nReason: ${json.cannotExtract}\n`;
-    await writeFile(proposalPath, existing + entry, 'utf-8');
+  if (json.twinAppend) {
+    const current = await readFile(twinPath, 'utf-8');
+    await writeFile(twinPath, current.trimEnd() + '\n\n' + json.twinAppend + '\n', 'utf-8');
+    console.log(dim(`  Updated ${twinFilename}`));
   }
 
   // Clear steer.md so it isn't re-processed next cycle

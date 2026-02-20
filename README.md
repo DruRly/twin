@@ -159,7 +159,7 @@ twin steer "I want users to be able to share their progress on Twitter"
 
 Or run `twin steer` with no arguments to type or dictate a longer message.
 
-Your twin turns it into stories in `prd.json` and proposes any taste updates in `twin-proposal.md` for your review. Works any time — before a build, between runs, or from a second terminal while a build is running.
+Your twin turns it into stories in `prd.json` and updates your `.twin` file with anything it can infer about your taste. Works any time — before a build, between runs, or from a second terminal while a build is running.
 
 ## What Goes in a `.twin` File
 
