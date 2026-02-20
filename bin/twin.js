@@ -37,7 +37,7 @@ Usage:
   twin build --loop          Build, plan, build — fully autonomous
   twin build --loop --stories 20  Stop after 20 stories
   twin build --loop --minutes 30  Stop after 30 minutes
-  twin steer [message]       Send your twin a correction mid-build
+  twin steer [message]       Tell your twin what to build next
   twin --help                Show this message
 `);
 } else {

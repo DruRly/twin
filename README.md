@@ -151,15 +151,15 @@ Requires Claude Code installed and available in your PATH.
 
 ### `twin steer`
 
-Your build went in a direction you didn't want. Open a second terminal and tell your twin:
+You have something to say but don't want to write a user story yourself. Just say it:
 
 ```bash
-twin steer "don't use inline UI for conversion flows — always modals"
+twin steer "I want users to be able to share their progress on Twitter"
 ```
 
 Or run `twin steer` with no arguments to type or dictate a longer message.
 
-Your twin finishes its current story, then reads your message. It adds anything actionable to `prd.json` and writes a proposed update to your `.twin` file in `twin-proposal.md` — so the mistake doesn't repeat. The message is cleared automatically once read.
+Your twin turns it into stories in `prd.json` and proposes any taste updates in `twin-proposal.md` for your review. Works any time — before a build, between runs, or from a second terminal while a build is running.
 
 ## What Goes in a `.twin` File
 
