@@ -246,7 +246,7 @@ async function processSteer(cwd, twinPath, prdPath) {
       '',
       `${twinFilename}:\n${twinContent}`,
       '',
-      `Next story id if needed: ${nextId}`,
+      `Next available story id: ${nextId} (increment for each additional story)`,
       '',
       'Output JSON with this exact shape:',
       '{',
