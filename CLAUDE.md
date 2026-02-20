@@ -15,6 +15,7 @@
 - `src/generate.js` — LLM call to produce twin file content
 - `src/llm.js` — shared LLM layer (callLLM)
 - `src/prompt.js` — shared multi-line input handler
+- `src/steer.js` — writes steering message to steer.md (accepts inline args or interactive prompt)
 
 ## Generated files (live in user's project, not this repo)
 
