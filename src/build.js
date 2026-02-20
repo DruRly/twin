@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runPlan } from './plan.js';
 import { callLLM } from './llm.js';
@@ -327,6 +328,11 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
   const cwd = process.cwd();
   const startTime = Date.now();
   const timeLimitMs = maxMinutes ? maxMinutes * 60 * 1000 : null;
+
+  // Write lock file so twin steer knows a build is running
+  const lockPath = resolve(cwd, '.twin-lock');
+  await writeFile(lockPath, String(process.pid), 'utf-8');
+  process.on('exit', () => { try { unlinkSync(lockPath); } catch {} });
 
   // Clean exit on Ctrl+C — finish current story, then stop
   let stopping = false;

@@ -1,6 +1,8 @@
 import { writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createPrompter } from './prompt.js';
+import { build } from './build.js';
 
 export async function steer() {
   const cwd = process.cwd();
@@ -24,5 +26,12 @@ export async function steer() {
   }
 
   await writeFile(steerPath, message, 'utf-8');
-  console.log('\nSteer queued. Your twin will read it at the next story boundary.\n');
+
+  const lockPath = resolve(cwd, '.twin-lock');
+  if (existsSync(lockPath)) {
+    console.log('\nGot it. Your twin will pick this up at the next story boundary.\n');
+  } else {
+    console.log('');
+    await build({ maxStories: 1 });
+  }
 }

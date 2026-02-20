@@ -25,7 +25,7 @@ These are all gitignored in the user's project root:
 - `progress.md` — build log
 - `synthesis.md` — priority justification log (written before each story)
 - `steer.md` — developer steering input (read and cleared at story boundaries)
-- `twin-proposal.md` — proposed taste updates for human review
+- `.twin-lock` — written by `twin build` while running, deleted on exit; used by `twin steer` to detect active build
 
 ## Style rules
 
