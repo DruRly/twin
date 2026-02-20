@@ -149,6 +149,18 @@ npx twin-cli build --loop --minutes 30   # stop after 30 minutes
 
 Requires Claude Code installed and available in your PATH.
 
+### Steering mid-loop
+
+Write anything into `steer.md` in your project root — while the loop is running or before starting one:
+
+```bash
+echo "Don't use inline UI for conversion flows — always modals" > steer.md
+```
+
+At the next story boundary, twin reads it, adds actionable stories to `prd.json`, and writes a proposed taste update to `twin-proposal.md` for your review. Then it clears `steer.md` and continues building.
+
+`steer.md` is your escape hatch when a build goes in a direction you didn't want. The correction becomes both a task signal (what to fix) and a taste signal (how you think) — so the twin gets more accurate, not just redirected.
+
 ## What Goes in a `.twin` File
 
 - **Execution bias** — do you plan first or build first? Ship rough or wait for polish?
