@@ -399,7 +399,7 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     const twinContent = await readFile(twinPath, 'utf-8');
 
     // Process any steering input before deciding what to build next
-    await withStatus('Reading steer...', () => processSteer(cwd, twinPath, prdPath)).catch(() => {});
+    await withStatus('Applying your steer...', () => processSteer(cwd, twinPath, prdPath)).catch(() => {});
 
     // Re-read prd.json (steer or previous story may have updated it)
     const currentPrdContent = await readFile(prdPath, 'utf-8');
