@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { runPlan } from './plan.js';
+import { callLLM } from './llm.js';
 
 const COMPLETION_SIGNAL = '<twin>STORY_COMPLETE</twin>';
 const ALL_DONE_SIGNAL = '<twin>ALL_COMPLETE</twin>';
@@ -218,6 +219,16 @@ const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s) => `\x1b[1m${s}\x1b[0m`;
 const bar = dim('─'.repeat(60));
 
+async function logPriorityJustification(twinContent, prdContent, storyNum, synthesisPath) {
+  const justification = await callLLM(
+    'You are a prioritization oracle. Answer in 1-3 sentences only. No preamble.',
+    `Twin file:\n${twinContent}\n\nprd.json:\n${prdContent}\n\nIf you could only ship one story this cycle, which would it be and why? Reference the twin file reasoning explicitly.`
+  );
+  const existing = await readIfExists(synthesisPath) || '';
+  const entry = `\n## Story ${storyNum} — ${new Date().toISOString()}\n\n**Priority justification:** ${justification}\n`;
+  await writeFile(synthesisPath, existing + entry, 'utf-8');
+}
+
 const STORY_RETRIES = 2;
 const STORY_RETRY_DELAYS = [10_000, 30_000]; // 10s, then 30s
 
@@ -261,7 +272,9 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
   const prd = JSON.parse(prdContent);
   const openStories = prd.userStories.filter((s) => s.status !== 'done');
   if (openStories.length === 0 && !loop) {
-    console.log('All stories are done. Plan the next batch:\n  npx twin-cli plan\n');
+    console.log('All stories are done.\n');
+    console.log('  npx twin-cli plan             # plan the next batch, then build');
+    console.log('  npx twin-cli build --loop     # plan and build automatically\n');
     process.exit(0);
   }
   // In loop mode with no open stories, the while loop will trigger planning
@@ -312,8 +325,8 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
         console.log(bold('  All stories complete'));
         console.log(dim(`  ${summary(totalBuilt, cycle, Date.now() - startTime)}`));
         console.log(bar);
-        console.log('\nNext step — plan more features:');
-        console.log('  npx twin-cli plan\n');
+        console.log('\n  npx twin-cli plan             # plan the next batch, then build');
+        console.log('  npx twin-cli build --loop     # plan and build automatically\n');
         break;
       }
 
@@ -370,6 +383,10 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     console.log('');
 
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
+
+    // Log priority justification to synthesis.md before building
+    await logPriorityJustification(twinContent, currentPrdContent, storyNum, resolve(cwd, 'synthesis.md')).catch(() => {});
+
     const prompt = buildPrompt(twinContent, twinFilename, currentPrdContent, progressContent);
 
     let succeeded = false;
@@ -413,7 +430,8 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     console.log(dim(`  ${summary(totalBuilt, cycle, Date.now() - startTime)}`));
     console.log(bar);
     if (!loop) {
-      console.log('\nKeep going:\n  npx twin-cli build');
+      console.log('\n  npx twin-cli build            # keep building');
+      console.log('  npx twin-cli build --loop     # build and plan automatically\n');
     }
     console.log('');
   }

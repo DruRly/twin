@@ -2,6 +2,7 @@ node_modules/
 *.swp
 context.txt
 FUTURE.md
+BACKLOG.md
 domain_options.csv
 
 # Generated output files (user artifacts, not part of the tool)
@@ -10,3 +11,4 @@ product.md
 prd.json
 progress.md
 tasks.md
+synthesis.md

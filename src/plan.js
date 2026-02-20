@@ -204,5 +204,6 @@ export async function plan() {
   console.log(`---`);
   console.log(`Wrote ${prdPath}`);
   console.log(`\nNext step — let your twin build it:`);
-  console.log(`  npx twin-cli build`);
+  console.log(`  npx twin-cli build            # build the next 3 stories`);
+  console.log(`  npx twin-cli build --loop     # build and plan automatically`);
 }
