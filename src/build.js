@@ -299,6 +299,23 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Show an overwriting status line while an async operation runs, then clear it
+async function withStatus(msg, fn) {
+  const start = Date.now();
+  let shown = false;
+  const timer = setInterval(() => {
+    const elapsed = Math.round((Date.now() - start) / 1000);
+    process.stdout.write(`\r${dim(`${msg} (${elapsed}s)`)}`);
+    shown = true;
+  }, 3_000);
+  try {
+    return await fn();
+  } finally {
+    clearInterval(timer);
+    if (shown) process.stdout.write('\r\x1b[K');
+  }
+}
+
 function summary(totalBuilt, cycles, elapsed) {
   const mins = Math.round(elapsed / 60000);
   const time = mins > 0 ? ` in ${mins}m` : '';
@@ -376,7 +393,7 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     const twinContent = await readFile(twinPath, 'utf-8');
 
     // Process any steering input before deciding what to build next
-    await processSteer(cwd, twinPath, prdPath).catch(() => {});
+    await withStatus('Reading steer...', () => processSteer(cwd, twinPath, prdPath)).catch(() => {});
 
     // Re-read prd.json (steer or previous story may have updated it)
     const currentPrdContent = await readFile(prdPath, 'utf-8');
@@ -400,11 +417,10 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
       console.log('');
       console.log(bar);
       console.log(bold(`  Cycle ${cycle} complete`));
-      console.log(dim('  Your twin is planning the next batch...'));
       console.log(bar);
       console.log('');
 
-      const newStories = await runPlan(cwd);
+      const newStories = await withStatus('Planning...', () => runPlan(cwd));
 
       if (newStories.length === 0) {
         console.log(bar);
@@ -451,7 +467,9 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     const progressContent = await readIfExists(resolve(cwd, 'progress.md'));
 
     // Log priority justification to synthesis.md before building
-    await logPriorityJustification(twinContent, currentPrdContent, storyNum, resolve(cwd, 'synthesis.md')).catch(() => {});
+    await withStatus('Thinking...', () =>
+      logPriorityJustification(twinContent, currentPrdContent, storyNum, resolve(cwd, 'synthesis.md'))
+    ).catch(() => {});
 
     const prompt = buildPrompt(twinContent, twinFilename, currentPrdContent, progressContent);
 
