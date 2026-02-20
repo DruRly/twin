@@ -236,13 +236,18 @@ async function processSteer(cwd, twinPath, prdPath) {
   }, 0);
   const nextId = `US-${String(maxNum + 1).padStart(3, '0')}`;
 
+  // Send trimmed prd (id + title + status only) to reduce token count
+  const prdSummary = prd.userStories
+    .map((s) => `${s.id}: ${s.title} (${s.status})`)
+    .join('\n');
+
   const result = await callLLM(
     'You process developer steering input for a build loop. Output valid JSON only — no prose, no markdown fences.',
     [
       'Steering input from developer:',
       steerContent,
       '',
-      `prd.json:\n${prdContent}`,
+      `Existing stories:\n${prdSummary}`,
       '',
       `${twinFilename}:\n${twinContent}`,
       '',
@@ -300,13 +305,18 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Show an overwriting status line while an async operation runs, then clear it
+// Show an overwriting status line while an async operation runs, then clear it.
+// msg can be a string, or an array of [afterSeconds, message] milestones.
 async function withStatus(msg, fn) {
+  const milestones = Array.isArray(msg)
+    ? msg.slice().sort((a, b) => a[0] - b[0])
+    : [[0, msg]];
   const start = Date.now();
   let shown = false;
   const timer = setInterval(() => {
     const elapsed = Math.round((Date.now() - start) / 1000);
-    process.stdout.write(`\r${dim(`${msg} (${elapsed}s)`)}`);
+    const current = milestones.filter(([s]) => elapsed >= s).pop()[1];
+    process.stdout.write(`\r${dim(`${current} (${elapsed}s)`)}`);
     shown = true;
   }, 3_000);
   try {
@@ -399,7 +409,12 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     const twinContent = await readFile(twinPath, 'utf-8');
 
     // Process any steering input before deciding what to build next
-    await withStatus('Applying your steer...', () => processSteer(cwd, twinPath, prdPath)).catch(() => {});
+    await withStatus([
+      [0,   'Applying your steer...'],
+      [20,  'Still working...'],
+      [60,  'Your message is detailed — taking a moment...'],
+      [120, 'Almost there...'],
+    ], () => processSteer(cwd, twinPath, prdPath)).catch(() => {});
 
     // Re-read prd.json (steer or previous story may have updated it)
     const currentPrdContent = await readFile(prdPath, 'utf-8');
