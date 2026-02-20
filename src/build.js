@@ -219,6 +219,77 @@ const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s) => `\x1b[1m${s}\x1b[0m`;
 const bar = dim('─'.repeat(60));
 
+async function processSteer(cwd, twinPath, prdPath) {
+  const steerPath = resolve(cwd, 'steer.md');
+  const steerContent = await readIfExists(steerPath);
+  if (!steerContent?.trim()) return;
+
+  const twinContent = await readFile(twinPath, 'utf-8');
+  const twinFilename = twinPath.split('/').pop();
+  const prdContent = await readFile(prdPath, 'utf-8');
+  const prd = JSON.parse(prdContent);
+
+  const maxNum = prd.userStories.reduce((max, s) => {
+    const m = s.id?.match(/\d+/);
+    return m ? Math.max(max, parseInt(m[0], 10)) : max;
+  }, 0);
+  const nextId = `US-${String(maxNum + 1).padStart(3, '0')}`;
+
+  const result = await callLLM(
+    'You process developer steering input for a build loop. Output valid JSON only — no prose, no markdown fences.',
+    [
+      'Steering input from developer:',
+      steerContent,
+      '',
+      `prd.json:\n${prdContent}`,
+      '',
+      `${twinFilename}:\n${twinContent}`,
+      '',
+      `Next story id if needed: ${nextId}`,
+      '',
+      'Output JSON with this exact shape:',
+      '{',
+      '  "newStories": [],     // stories to add to prd.json (id, title, userStory, acceptanceCriteria array, status:"open"), empty array if none',
+      '  "twinProposal": null, // proposed addition or refinement to twin file based on taste revealed by this steering, or null',
+      '  "cannotExtract": null // reason no taste signal could be extracted, or null if twinProposal is set',
+      '}',
+    ].join('\n')
+  );
+
+  let json;
+  try {
+    json = JSON.parse(result.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim());
+  } catch {
+    console.log(dim('  steer: could not parse response, skipping.'));
+    return;
+  }
+
+  if (json.newStories?.length > 0) {
+    prd.userStories.push(...json.newStories);
+    await writeFile(prdPath, JSON.stringify(prd, null, 2), 'utf-8');
+    console.log('');
+    for (const s of json.newStories) {
+      console.log(dim('  + ') + `${s.id}  ${s.title}`);
+    }
+  }
+
+  const proposalPath = resolve(cwd, 'twin-proposal.md');
+  const existing = await readIfExists(proposalPath) || '';
+  const steering = steerContent.trim().slice(0, 120) + (steerContent.trim().length > 120 ? '...' : '');
+
+  if (json.twinProposal) {
+    const entry = `\n## ${new Date().toISOString()}\n\n> "${steering}"\n\n${json.twinProposal}\n`;
+    await writeFile(proposalPath, existing + entry, 'utf-8');
+    console.log(dim('  Taste update proposed → twin-proposal.md'));
+  } else if (json.cannotExtract) {
+    const entry = `\n## ${new Date().toISOString()} — no taste signal\n\n> "${steering}"\n\nReason: ${json.cannotExtract}\n`;
+    await writeFile(proposalPath, existing + entry, 'utf-8');
+  }
+
+  // Clear steer.md so it isn't re-processed next cycle
+  await writeFile(steerPath, '', 'utf-8');
+}
+
 async function logPriorityJustification(twinContent, prdContent, storyNum, synthesisPath) {
   const justification = await callLLM(
     'You are a prioritization oracle. Answer in 1-3 sentences only. No preamble.',
@@ -312,7 +383,10 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
     // Re-read twin each cycle (user may tweak mid-run)
     const twinContent = await readFile(twinPath, 'utf-8');
 
-    // Re-read prd.json (previous story or plan cycle may have updated it)
+    // Process any steering input before deciding what to build next
+    await processSteer(cwd, twinPath, prdPath).catch(() => {});
+
+    // Re-read prd.json (steer or previous story may have updated it)
     const currentPrdContent = await readFile(prdPath, 'utf-8');
     const currentPrd = JSON.parse(currentPrdContent);
     const remaining = currentPrd.userStories.filter((s) => s.status !== 'done');
