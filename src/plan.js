@@ -11,6 +11,8 @@ const TASK_SYSTEM_PROMPT = `You are a taste-aware product planner. You receive:
 
 Your job: generate 3-5 atomic capabilities — things a user can DO after they're built. Not stubs, not refactors, not "set up X." Real, demoable features.
 
+If project-memory.md is provided, use it to avoid planning work that's already done or that conflicts with established patterns.
+
 Rules:
 - Match the builder's taste. If they ship fast, suggest quick wins. If they want polish, suggest completeness.
 - Order by priority — most impactful first
@@ -97,10 +99,15 @@ export async function runPlan(cwd) {
 
   const statusPath = resolve(cwd, 'status.md');
   const prdPath = resolve(cwd, 'prd.json');
+  const memoryPath = resolve(cwd, 'project-memory.md');
   const status = await readIfExists(statusPath);
   const existingPrd = await readIfExists(prdPath);
+  const memory = await readIfExists(memoryPath);
 
   let userMessage = `## .twin file\n${twin}\n\n## product.md\n${product}`;
+  if (memory) {
+    userMessage += `\n\n## project-memory.md\n${memory}`;
+  }
   if (status) {
     userMessage += `\n\n## status.md\n${status}`;
   }

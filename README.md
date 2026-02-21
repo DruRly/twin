@@ -94,7 +94,7 @@ Your `.twin` file is portable. Copy it into any new project and run `npx twin-cl
 
 ## Project Ideas
 
-Twin works best on new projects. Some things to try:
+Twin works on new projects and existing ones. On an existing project, run `twin scout` first — it reads your git history and codebase so the plan is grounded in what's actually there. Some things to try:
 
 - Habit tracker with streaks and daily timers
 - Personal landing page with email capture and a changelog
@@ -148,6 +148,18 @@ npx twin-cli build --loop --minutes 30   # stop after 30 minutes
 ```
 
 Requires Claude Code installed and available in your PATH.
+
+### `twin scout`
+
+Drop twin into an existing project and it needs to learn the codebase before it can plan well. `twin scout` does that automatically:
+
+```bash
+npx twin-cli scout
+```
+
+It reads your git history, project structure, and key config files, then synthesizes everything into `project-memory.md`. After that, `twin plan` reads this file automatically — so the stories it generates extend what exists rather than ignore or duplicate it.
+
+Run `twin scout` once when starting on an existing project. Re-run it whenever the codebase has changed significantly.
 
 ### `twin steer`
 

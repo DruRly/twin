@@ -4,6 +4,7 @@ import { init } from '../src/init.js';
 import { plan } from '../src/plan.js';
 import { build } from '../src/build.js';
 import { steer } from '../src/steer.js';
+import { scout } from '../src/scout.js';
 
 const command = process.argv[2];
 
@@ -26,6 +27,8 @@ if (!command || command === 'init') {
   build({ maxStories, loop, maxMinutes });
 } else if (command === 'steer') {
   steer();
+} else if (command === 'scout') {
+  scout();
 } else if (command === '--help' || command === '-h') {
   console.log(`
 twin - your twin builds while you sleep
@@ -38,6 +41,7 @@ Usage:
   twin build --loop --stories 20  Stop after 20 stories
   twin build --loop --minutes 30  Stop after 30 minutes
   twin steer [message]       Tell your twin what to build next
+  twin scout                 Learn an existing project before planning
   twin --help                Show this message
 `);
 } else {
