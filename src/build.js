@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -303,6 +303,16 @@ async function logPriorityJustification(twinContent, prdContent, storyNum, synth
   await writeFile(synthesisPath, existing + entry, 'utf-8');
 }
 
+async function writeCheckpoint(cwd) {
+  try {
+    const sha = execSync('git rev-parse HEAD', { cwd, encoding: 'utf-8' }).trim();
+    await writeFile(resolve(cwd, '.twin-checkpoint'), sha, 'utf-8');
+    return sha;
+  } catch {
+    return null;
+  }
+}
+
 const STORY_RETRIES = 2;
 const STORY_RETRY_DELAYS = [10_000, 30_000]; // 10s, then 30s
 
@@ -348,6 +358,9 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
   const lockPath = resolve(cwd, '.twin-lock');
   await writeFile(lockPath, String(process.pid), 'utf-8');
   process.on('exit', () => { try { unlinkSync(lockPath); } catch {} });
+
+  // Always checkpoint current HEAD — silent safety net, rollback available any time
+  await writeCheckpoint(cwd);
 
   // Clean exit on Ctrl+C — finish current story, then stop
   let stopping = false;

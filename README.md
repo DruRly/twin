@@ -125,6 +125,8 @@ npx twin-cli build --loop --stories 20   # stop after 20 stories
 npx twin-cli build --loop --minutes 30   # stop after 30 minutes
 ```
 
+Every build run automatically saves a rollback point. If you come back and don't like what happened, `twin rollback` resets your project to exactly where it was — your run isn't deleted, it's saved on a branch in case you want any of it later.
+
 Requires Claude Code installed and available in your PATH.
 
 ### `twin scout`
