@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { callLLM } from './llm.js';
+import { ensureGlobalTwinDir } from './twin-global.js';
 
 const SYSTEM_PROMPT = `You are a taste interpreter. You read someone's answers to 5 questions about how they build things, and you produce a .twin file — a Markdown document that encodes their decision-making DNA.
 
@@ -55,9 +56,10 @@ export async function generateTwin(name, interviewText) {
   }
 
   const filename = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.twin`;
-  const outPath = resolve(process.cwd(), filename);
+  const globalDir = await ensureGlobalTwinDir();
+  const outPath = resolve(globalDir, filename);
   await writeFile(outPath, content, 'utf-8');
-  console.log(`Done! Created ${filename}\n`);
+  console.log(`Done! Created ${outPath}\n`);
   console.log('Next step — plan what to build:');
   console.log('  npx twin-cli plan');
 }

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
+import { readFile } from 'node:fs/promises';
 import { init } from '../src/init.js';
 import { plan } from '../src/plan.js';
 import { build } from '../src/build.js';
 import { steer } from '../src/steer.js';
 import { scout } from '../src/scout.js';
+import { findTwinPath } from '../src/twin-global.js';
 
 const command = process.argv[2];
 
@@ -29,6 +31,15 @@ if (!command || command === 'init') {
   steer();
 } else if (command === 'scout') {
   scout();
+} else if (command === 'show') {
+  const twinPath = await findTwinPath(process.cwd());
+  if (!twinPath) {
+    console.error('No .twin file found. Run `npx twin-cli init` first.\n');
+    process.exit(1);
+  }
+  const content = await readFile(twinPath, 'utf-8');
+  console.log(`\n${twinPath}\n`);
+  console.log(content);
 } else if (command === '--help' || command === '-h') {
   console.log(`
 twin - your twin builds while you sleep
@@ -42,6 +53,7 @@ Usage:
   twin build --loop --minutes 30  Stop after 30 minutes
   twin steer [message]       Tell your twin what to build next
   twin scout                 Learn an existing project before planning
+  twin show                  Print your twin file and its location
   twin --help                Show this message
 `);
 } else {

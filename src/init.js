@@ -1,5 +1,6 @@
 import { createPrompter } from './prompt.js';
 import { generateTwin } from './generate.js';
+import { findGlobalTwinPath } from './twin-global.js';
 
 const QUESTIONS = [
   "When you start something new, do you plan first or build first?",
@@ -10,6 +11,27 @@ const QUESTIONS = [
 ];
 
 export async function init() {
+  const existingPath = await findGlobalTwinPath();
+
+  if (existingPath) {
+    const twinFilename = existingPath.split('/').pop();
+    console.log(`\nFound your twin: ${twinFilename}`);
+    console.log(`  ${existingPath}\n`);
+
+    const prompter = createPrompter();
+    const answer = await prompter.ask('Use it in this project? [Y/n]');
+    prompter.close();
+
+    if (answer.trim().toLowerCase() !== 'n') {
+      console.log(`\nUsing ${twinFilename}\n`);
+      console.log('Next step — plan what to build:');
+      console.log('  npx twin-cli plan');
+      return;
+    }
+
+    console.log('');
+  }
+
   console.log('\n--- twin init ---');
   console.log('Answer a few questions. Say as much or as little as you want.');
   console.log('Your answers will be used to generate your .twin file.\n');

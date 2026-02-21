@@ -90,7 +90,7 @@ npx twin-cli plan
 npx twin-cli build
 ```
 
-Your `.twin` file is portable. Copy it into any new project and run `npx twin-cli plan` to start.
+Your twin file lives globally at `~/.twin/yourname.twin`. Run `twin init` in any new project — twin detects it automatically and skips the interview.
 
 ## Project Ideas
 
@@ -121,7 +121,9 @@ Each iteration, Claude Code starts fresh but reads the files on disk. Your twin.
 
 ### `twin init`
 
-Asks your name, then 5 questions about how you build. Generates `yourname.twin`.
+Asks your name, then 5 questions about how you build. Generates `~/.twin/yourname.twin` — stored globally so every project can use the same twin.
+
+If a twin already exists in `~/.twin/`, init detects it and asks if you want to use it — no re-interview needed.
 
 ### `twin plan`
 
@@ -160,6 +162,16 @@ npx twin-cli scout
 It reads your git history, project structure, and key config files, then synthesizes everything into `project-memory.md`. After that, `twin plan` reads this file automatically — so the stories it generates extend what exists rather than ignore or duplicate it.
 
 Run `twin scout` once when starting on an existing project. Re-run it whenever the codebase has changed significantly.
+
+### `twin show`
+
+Prints your twin file and its location:
+
+```bash
+twin show
+# → /Users/you/.twin/yourname.twin
+# → [your twin file contents]
+```
 
 ### `twin steer`
 

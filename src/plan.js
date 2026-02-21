@@ -2,6 +2,7 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve, basename } from 'node:path';
 import { callLLM } from './llm.js';
 import { createPrompter } from './prompt.js';
+import { findTwinPath } from './twin-global.js';
 
 const TASK_SYSTEM_PROMPT = `You are a taste-aware product planner. You receive:
 1. A .twin file — the builder's decision-making DNA (how they think, what they value)
@@ -86,11 +87,9 @@ function parseLLMJson(raw) {
  * Returns the array of NEW stories added (empty if the twin has nothing to add).
  */
 export async function runPlan(cwd) {
-  const files = await readdir(cwd);
-  const twinFiles = files.filter((f) => f.endsWith('.twin'));
-  if (twinFiles.length === 0) return [];
+  const twinPath = await findTwinPath(cwd);
+  if (!twinPath) return [];
 
-  const twinPath = resolve(cwd, twinFiles[0]);
   const twin = await readFile(twinPath, 'utf-8');
 
   const productPath = resolve(cwd, 'product.md');
@@ -167,18 +166,14 @@ export async function runPlan(cwd) {
  * Bootstraps product.md if missing, prints stories to console.
  */
 export async function plan() {
-  // Find *.twin file — required
+  // Find twin file — required
   const cwd = process.cwd();
-  const files = await readdir(cwd);
-  const twinFiles = files.filter((f) => f.endsWith('.twin'));
-  if (twinFiles.length === 0) {
+  const twinPath = await findTwinPath(cwd);
+  if (!twinPath) {
     console.error('No .twin file found. Run `npx twin-cli init` first.\n');
     process.exit(1);
   }
-  if (twinFiles.length > 1) {
-    console.log(`Found multiple .twin files: ${twinFiles.join(', ')}. Using ${twinFiles[0]}.`);
-  }
-  console.log(`Using ${twinFiles[0]}\n`);
+  console.log(`Using ${twinPath}\n`);
 
   // Read or bootstrap product.md
   const productPath = resolve(cwd, 'product.md');

@@ -4,6 +4,7 @@ import { unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runPlan } from './plan.js';
 import { callLLM } from './llm.js';
+import { findTwinPath, acquireTwinLock, releaseTwinLock } from './twin-global.js';
 
 const COMPLETION_SIGNAL = '<twin>STORY_COMPLETE</twin>';
 const ALL_DONE_SIGNAL = '<twin>ALL_COMPLETE</twin>';
@@ -17,13 +18,12 @@ async function readIfExists(path) {
 }
 
 async function findTwinFile(cwd) {
-  const files = await readdir(cwd);
-  const twinFiles = files.filter((f) => f.endsWith('.twin'));
-  if (twinFiles.length === 0) {
+  const twinPath = await findTwinPath(cwd);
+  if (!twinPath) {
     console.error('No .twin file found. Run `npx twin-cli init` first.\n');
     process.exit(1);
   }
-  return resolve(cwd, twinFiles[0]);
+  return twinPath;
 }
 
 function buildPrompt(twinContent, twinFilename, prdContent, progressContent) {
@@ -279,9 +279,14 @@ async function processSteer(cwd, twinPath, prdPath) {
   }
 
   if (json.twinAppend) {
-    const current = await readFile(twinPath, 'utf-8');
-    await writeFile(twinPath, current.trimEnd() + '\n\n' + json.twinAppend + '\n', 'utf-8');
-    console.log(dim(`  Updated ${twinFilename}`));
+    const lockPath = await acquireTwinLock(twinPath);
+    try {
+      const current = await readFile(twinPath, 'utf-8');
+      await writeFile(twinPath, current.trimEnd() + '\n\n' + json.twinAppend + '\n', 'utf-8');
+      console.log(dim(`  Updated ${twinFilename}`));
+    } finally {
+      await releaseTwinLock(lockPath);
+    }
   }
 
   // Clear steer.md so it isn't re-processed next cycle
