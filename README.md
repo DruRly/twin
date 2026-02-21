@@ -22,19 +22,16 @@ They can execute. They cannot decide.
 
 ## The Fix
 
-Three commands.
+Two commands.
 
 ```bash
-twin init     # your taste, in a file
-twin plan     # your twin decides what to build next
-twin build    # your twin builds it without you
+twin init              # your taste, in a file — once
+twin build --loop      # your twin plans, builds, plans again — on its own
 ```
 
 The difference between a `.twin` file and a Claude MD or a rules file: those are instructions. This is a decision-maker.
 
-Your twin knows how you think and decides what comes next.
-
-Run `twin plan` once and you get the next batch of features you would have chosen. Run it again and you get the batch after that. Keep running it and you are watching your own product roadmap unfold without writing a single task yourself.
+Your twin knows how you think and decides what comes next. Not just the next story — the next batch, and the batch after that. The loop runs until you stop it or it runs out of ideas.
 
 ## Before You Start
 
@@ -56,14 +53,15 @@ npx twin-cli init
 # → Asks your name, then 5 questions about how you build
 # → Generates ~/.twin/yourname.twin
 
-# 2. Generate your first plan
+# 2. Set up your project context (once)
 npx twin-cli plan
-# → Reads your twin, asks about your product, writes prd.json
+# → Asks what you're building and who it's for
+# → Writes prd.json with the first batch of stories
 
-# 3. Let your twin build
-npx twin-cli build
-# → Spawns Claude Code in a loop
-# → Builds each story, updates prd.json as it goes
+# 3. Let your twin run
+npx twin-cli build --loop
+# → Builds each story, plans the next batch, builds that
+# → Runs on its own until you stop it or it runs out of ideas
 ```
 
 ## Example: Building a Habit Tracker
@@ -86,16 +84,10 @@ npx twin-cli plan
 # → "Who is it for?" → People who want to build daily habits
 # → Writes prd.json with 3-5 user stories based on YOUR taste
 
-# Build it
-npx twin-cli build
-# → Claude picks the first story, builds it, marks it done
-# → Picks the next story, builds it, marks it done
-# → You watch it happen in real time
-
-# Want more? Plan again.
-npx twin-cli plan
-# → Sees what is done, generates the next batch
-npx twin-cli build
+# Let it run
+npx twin-cli build --loop
+# → Builds each story, marks it done, plans the next batch
+# → Keeps going on its own — you don't have to come back
 ```
 
 Your twin file lives globally at `~/.twin/yourname.twin`. Run `twin init` in any new project — twin detects it automatically and skips the interview.
@@ -112,14 +104,13 @@ Twin works on new projects and existing ones. On an existing project, run `twin 
 
 ## The Loop
 
-`init → plan → build → plan`
+`init → plan → build --loop`
 
 Your twin drives the whole cycle.
 
 1. **`twin init`** — your taste, in a file (once)
-2. **`twin plan`** — your twin generates the next batch of stories, matched to how you prioritize
-3. **`twin build`** — your twin builds on its own, updating `prd.json` as stories complete
-4. **`twin plan` again** — your twin reads what shipped and decides what comes next
+2. **`twin plan`** — sets up your project context and writes the first batch of stories
+3. **`twin build --loop`** — builds each story, re-plans when the batch runs out, keeps going
 
 You did not write a task list. Your twin wrote it.
 
