@@ -2,7 +2,7 @@
 
 Old TDD meant write the tests first. New TDD means write the twin first.
 
-A `.twin` file is the `.env` for your taste. Drop it into any project. Your AI does not wait for instructions. It decides what to build next and builds it. Not human in the loop. Twin in the loop.
+A `.twin` file is the `.env` for your taste. Create it once, use it in every project. Your AI does not wait for instructions. It decides what to build next and builds it. Not human in the loop. Twin in the loop.
 
 ## The Problem
 
@@ -46,7 +46,7 @@ mkdir my-app && cd my-app
 # 1. Create your twin (once)
 npx twin-cli init
 # → Asks your name, then 5 questions about how you build
-# → Generates yourname.twin
+# → Generates ~/.twin/yourname.twin
 
 # 2. Generate your first plan
 npx twin-cli plan
@@ -70,7 +70,7 @@ mkdir habit-tracker && cd habit-tracker
 npx twin-cli init
 # → "What should we call you?" → Dru
 # → Answer 5 questions about how you build
-# → Generates dru.twin
+# → Generates ~/.twin/dru.twin
 
 # Generate the plan
 npx twin-cli plan
