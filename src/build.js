@@ -446,7 +446,12 @@ export async function build({ maxStories = 3, loop = false, maxMinutes = null } 
       console.log(bar);
       console.log('');
 
-      const newStories = await withStatus('Planning...', () => runPlan(cwd));
+      const newStories = await withStatus([
+        [0,  'Your twin is deciding what to build next...'],
+        [20, 'Reading what shipped, weighing priorities...'],
+        [45, 'Generating stories...'],
+        [75, 'Taking a moment — almost there...'],
+      ], () => runPlan(cwd));
 
       if (newStories.length === 0) {
         console.log(bar);
