@@ -1,7 +1,12 @@
 {
   "name": "twin-cli",
   "version": "0.5.0",
-  "description": "Your twin builds while you sleep. Not human in the loop. Twin in the loop.",
+  "description": "Your twin builds while you sleep.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DruRly/twin.git"
+  },
+  "homepage": "https://github.com/DruRly/twin#readme",
   "type": "module",
   "bin": {
     "twin": "./bin/twin.js"
