@@ -124,26 +124,25 @@ Each iteration, Claude Code starts fresh but reads the files on disk. Your twin.
 
 ### `twin init`
 
+**Never used twin before? Start here.**
+
 Asks your name, then 5 questions about how you build. Generates `~/.twin/yourname.twin` — stored globally so every project can use the same twin.
 
 If a twin already exists in `~/.twin/`, init detects it and asks if you want to use it — no re-interview needed.
 
 ### `twin plan`
 
-Reads your `.twin` file and project context. Generates 3-5 capabilities that match your taste. Writes `prd.json` with user stories and status tracking.
+**Starting a new project, or adding stories to an existing one?**
+
+Reads your twin and what you're building. Generates 3-5 capabilities matched to your taste. Writes `prd.json`.
 
 If no `product.md` exists, `twin plan` asks 2 quick questions to set up your project context first. Running it again adds new stories without duplicating old ones.
 
 ### `twin build`
 
-Runs an autonomous build loop using Claude Code. Each iteration:
+**Ready to hand it off?**
 
-- Reads your twin file for how you think
-- Reads `prd.json` for open stories
-- Picks the next story to build (guided by your taste)
-- Builds it, commits, and marks it done in `prd.json`
-- Appends learnings to `progress.md`
-- Repeats until all stories are done or the story limit is hit
+Your twin picks the next story, builds it, marks it done, and keeps going. With `--loop` it re-plans when the batch runs out.
 
 ```bash
 npx twin-cli build                       # build the current stories (default: 3)
@@ -156,19 +155,21 @@ Requires Claude Code installed and available in your PATH.
 
 ### `twin scout`
 
-Drop twin into an existing project and it needs to learn the codebase before it can plan well. `twin scout` does that automatically:
+**Dropping twin into an existing project?**
+
+Run this first. It reads your git history, project structure, and key files, then writes `project-memory.md`. After that, `twin plan` generates stories that extend what exists rather than ignore or duplicate it.
 
 ```bash
 npx twin-cli scout
 ```
 
-It reads your git history, project structure, and key config files, then synthesizes everything into `project-memory.md`. After that, `twin plan` reads this file automatically — so the stories it generates extend what exists rather than ignore or duplicate it.
-
-Run `twin scout` once when starting on an existing project. Re-run it whenever the codebase has changed significantly.
+Run it once when starting on an existing project. Re-run it whenever the codebase has changed significantly.
 
 ### `twin show`
 
-Prints your twin file and its location:
+**Want to see what your twin knows?**
+
+Prints your twin file and exactly where it lives.
 
 ```bash
 twin show
@@ -178,7 +179,9 @@ twin show
 
 ### `twin steer`
 
-You have something to say but don't want to write a user story yourself. Just say it:
+**Want to redirect the build without writing a task yourself?**
+
+Just say it:
 
 ```bash
 twin steer "I want users to be able to share their progress on Twitter"
@@ -186,7 +189,7 @@ twin steer "I want users to be able to share their progress on Twitter"
 
 Or run `twin steer` with no arguments to type or dictate a longer message.
 
-Your twin turns it into stories in `prd.json` and updates your `.twin` file with anything it can infer about your taste. Works any time — before a build, between runs, or from a second terminal while a build is running.
+Your twin turns it into stories and updates your `.twin` file with anything it can infer about your taste. Works any time — before a build, between runs, or from a second terminal while a build is running.
 
 ## What Goes in a `.twin` File
 
