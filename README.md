@@ -6,8 +6,6 @@ A `.twin` file is the `.env` for your taste. Create it once, use it in every pro
 
 Your AI does not wait for instructions. It decides what to build next and builds it.
 
-Not human in the loop. Twin in the loop.
-
 ## The Problem
 
 You give an agent a task list. It finishes. It stops. Now you have to decide what comes next.
