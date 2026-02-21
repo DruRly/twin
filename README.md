@@ -33,6 +33,8 @@ The difference between a `.twin` file and a Claude MD or a rules file: those are
 
 Your twin knows how you think and decides what comes next. Not just the next story — the next batch, and the batch after that. The loop runs until you stop it or it runs out of ideas.
 
+Want a ceiling? `--stories 10` or `--minutes 30`. Otherwise it goes.
+
 ## Before You Start
 
 - **Node.js 18+** — [nodejs.org](https://nodejs.org)
