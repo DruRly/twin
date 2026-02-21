@@ -2,7 +2,11 @@
 
 Old TDD meant write the tests first. New TDD means write the twin first.
 
-A `.twin` file is the `.env` for your taste. Create it once, use it in every project. Your AI does not wait for instructions. It decides what to build next and builds it. Not human in the loop. Twin in the loop.
+A `.twin` file is the `.env` for your taste. Create it once, use it in every project.
+
+Your AI does not wait for instructions. It decides what to build next and builds it.
+
+Not human in the loop. Twin in the loop.
 
 ## The Problem
 
@@ -12,7 +16,9 @@ So you check at 2am. Write the next batch. Go back to sleep. Wake at 5am. Check 
 
 This is Vampire Coding. Hands-off in theory. Consumed in practice.
 
-The root cause: agents do not know what you would build next. They can execute. They cannot decide.
+The root cause: agents do not know what you would build next.
+
+They can execute. They cannot decide.
 
 ## The Fix
 
@@ -24,7 +30,9 @@ twin plan     # your twin decides what to build next
 twin build    # your twin builds it without you
 ```
 
-The difference between a `.twin` file and a Claude MD or a rules file: those are instructions. This is a decision-maker. Your twin knows how you think and decides what comes next.
+The difference between a `.twin` file and a Claude MD or a rules file: those are instructions. This is a decision-maker.
+
+Your twin knows how you think and decides what comes next.
 
 Run `twin plan` once and you get the next batch of features you would have chosen. Run it again and you get the batch after that. Keep running it and you are watching your own product roadmap unfold without writing a single task yourself.
 
@@ -113,7 +121,9 @@ Your twin drives the whole cycle.
 3. **`twin build`** — your twin builds on its own, updating `prd.json` as stories complete
 4. **`twin plan` again** — your twin reads what shipped and decides what comes next
 
-You did not write a task list. Your twin wrote it. You did not pick the next feature. Your twin picked it.
+You did not write a task list. Your twin wrote it.
+
+You did not pick the next feature. Your twin picked it.
 
 Each iteration, Claude Code starts fresh but reads the files on disk. Your twin. The PRD. A progress log. The files are the memory. Your taste stays consistent across runs.
 
@@ -199,7 +209,7 @@ Your twin turns it into stories in `prd.json` and updates your `.twin` file with
 - Your tech stack (that goes in project config)
 - Your roadmap (that goes in a PRD)
 
-The twin holds your taste. The project files hold what you are building. The twin is the founder. The project files are the company.
+The twin holds your taste. The project files hold what you are building.
 
 ## Notes
 
