@@ -66,32 +66,6 @@ npx twin-cli build --loop
 # → Runs on its own until you stop it or it runs out of ideas
 ```
 
-## Example: Building a Habit Tracker
-
-A full walkthrough from zero to working app.
-
-```bash
-# Create the project
-mkdir habit-tracker && cd habit-tracker
-
-# Create your twin
-npx twin-cli init
-# → "What should we call you?" → Dru
-# → Answer 5 questions about how you build
-# → Generates ~/.twin/dru.twin
-
-# Generate the plan
-npx twin-cli plan
-# → "What are you building?" → A habit app with GitHub-style tracking and timers
-# → "Who is it for?" → People who want to build daily habits
-# → Writes prd.json with 3-5 user stories based on YOUR taste
-
-# Let it run
-npx twin-cli build --loop
-# → Builds each story, marks it done, plans the next batch
-# → Keeps going on its own — you don't have to come back
-```
-
 Your twin file lives globally at `~/.twin/yourname.twin`. Run `twin init` in any new project — twin detects it automatically and skips the interview.
 
 ## Project Ideas
