@@ -1,4 +1,5 @@
 node_modules/
+CLAUDE.md
 *.swp
 context.txt
 FUTURE.md
