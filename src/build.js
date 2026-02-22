@@ -286,7 +286,8 @@ async function processSteer(cwd, twinPath, prdPath) {
     const lockPath = await acquireTwinLock(twinPath);
     try {
       const current = await readFile(twinPath, 'utf-8');
-      await writeFile(twinPath, current.trimEnd() + '\n\n' + json.twinAppend + '\n', 'utf-8');
+      const date = new Date().toISOString().slice(0, 10);
+      await writeFile(twinPath, current.trimEnd() + `\n\n<!-- ${date} -->\n` + json.twinAppend + '\n', 'utf-8');
       console.log(dim(`  Updated ${twinFilename}`));
     } finally {
       await releaseTwinLock(lockPath);
