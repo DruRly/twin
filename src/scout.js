@@ -1,4 +1,5 @@
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile, readdir, access } from 'node:fs/promises';
+import { constants } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { callLLM } from './llm.js';
@@ -77,28 +78,51 @@ async function buildTree(dir, depth = 0) {
   return output;
 }
 
-const ALLOWLIST = [
-  'README.md',
-  'package.json',
-  'tsconfig.json',
-  '.env.example',
-  '.eslintrc',
-  '.eslintrc.json',
-  '.eslintrc.js',
-  'biome.json',
-  '.prettierrc',
-  'Makefile',
-  'prd.json',
-  'synthesis.md',
+// Never read credential or secret files, regardless of project type
+const CREDENTIAL_PATTERNS = [
+  /^\.env(\..*)?$/,   // .env, .env.local, .env.production, etc.
+  /\.pem$/,
+  /\.key$/,
+  /\.p12$/,
+  /\.pfx$/,
+  /\.keystore$/,
+  /\.secret$/,
 ];
 
-async function readAllowlisted(cwd) {
+const BINARY_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
+  '.pdf', '.zip', '.tar', '.gz', '.bz2', '.7z',
+  '.wasm', '.ttf', '.woff', '.woff2', '.eot', '.otf',
+  '.mp4', '.mp3', '.mov', '.avi', '.wav',
+  '.exe', '.dll', '.so', '.dylib', '.bin',
+]);
+
+const FILE_CHAR_LIMIT = 3000;
+
+function isSkippedFile(name) {
+  if (CREDENTIAL_PATTERNS.some((p) => p.test(name))) return true;
+  const dot = name.lastIndexOf('.');
+  if (dot !== -1 && BINARY_EXTENSIONS.has(name.slice(dot))) return true;
+  return false;
+}
+
+async function readProjectFiles(cwd) {
   const sections = [];
-  for (const filename of ALLOWLIST) {
-    const content = await readIfExists(resolve(cwd, filename));
-    if (content) {
-      sections.push(`### ${filename}\n${content}`);
+  let entries;
+  try {
+    entries = await readdir(cwd, { withFileTypes: true });
+  } catch {
+    return '';
+  }
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (isSkippedFile(entry.name)) continue;
+    let content = await readIfExists(resolve(cwd, entry.name));
+    if (!content) continue;
+    if (content.length > FILE_CHAR_LIMIT) {
+      content = content.slice(0, FILE_CHAR_LIMIT) + '\n... (truncated)';
     }
+    sections.push(`### ${entry.name}\n${content}`);
   }
   return sections.join('\n\n');
 }
@@ -106,9 +130,9 @@ async function readAllowlisted(cwd) {
 const SCOUT_RETRIES = 2;
 const SCOUT_RETRY_DELAY = 15_000;
 
-const SYSTEM_PROMPT = `You are a project historian. You receive information about an existing codebase and produce a single Markdown document: project-memory.md.
+const MEMORY_PROMPT = `You are a project historian. You receive information about an existing codebase and your response IS the project memory document.
 
-Your job is to write a clear, accurate autobiographical memory of the project — as if you had been there from the start. A developer's AI twin will read this before planning the next features, so it must be grounded in what actually exists, not speculation.
+Your job is to return a clear, accurate autobiographical memory of the project — as if you had been there from the start. A developer's AI twin will read your response before planning the next features, so it must be grounded in what actually exists, not speculation.
 
 Cover these areas (skip any where you have no evidence):
 - What has been built: key features, modules, patterns visible in the structure and history
@@ -122,10 +146,30 @@ Rules:
 - Be concise. A developer should be able to read this in two minutes.
 - Use plain Markdown headers and bullet points. No tables, no code fences.
 - Do not repeat the raw data back. Synthesize it.
-- Output ONLY the Markdown content. No preamble, no explanation.`;
+- Your entire response must be the Markdown content and nothing else. No preamble, no explanation, no file operations.`;
+
+const PRODUCT_PROMPT = `You are reading an existing software project. Your response must be the product context document and nothing else.
+
+Respond with ONLY the following format — no preamble, no explanation, no file operations:
+
+# Product
+
+## What
+[One paragraph describing what this project is and what it does]
+
+## Who
+[One sentence describing who this is built for]`;
 
 export async function scout() {
   const cwd = process.cwd();
+
+  // Fail fast before spending tokens if we can't write output files
+  try {
+    await access(cwd, constants.W_OK);
+  } catch {
+    console.error('\n  Cannot write to this directory. Check permissions and try again.\n');
+    return;
+  }
 
   console.log(dim('  Scouting project...'));
 
@@ -136,25 +180,24 @@ export async function scout() {
   const tree = await buildTree(cwd);
 
   console.log(dim('  Reading project files...'));
-  const files = await readAllowlisted(cwd);
+  const files = await readProjectFiles(cwd);
 
-  let userMessage = '';
-  if (tree) userMessage += `## Directory structure\n${tree}\n`;
-  if (history) userMessage += `\n## Git history (last 50 commits)\n${history}\n`;
-  if (files) userMessage += `\n## Project files\n${files}\n`;
+  let projectData = '';
+  if (tree) projectData += `## Directory structure\n${tree}\n`;
+  if (history) projectData += `\n## Git history (last 50 commits)\n${history}\n`;
+  if (files) projectData += `\n## Project files\n${files}\n`;
 
-  if (!userMessage.trim()) {
+  if (!projectData.trim()) {
     console.log('  Nothing to scout — no files or git history found.');
     return;
   }
 
-  userMessage += '\n\nWrite project-memory.md now.';
-
+  // Write project-memory.md
   let stopSpinner = startSpinner('Synthesizing project memory...');
   let raw;
   for (let attempt = 0; attempt <= SCOUT_RETRIES; attempt++) {
     try {
-      raw = await callLLM(SYSTEM_PROMPT, userMessage);
+      raw = await callLLM(MEMORY_PROMPT, projectData + '\n\nReturn the project memory now.');
       stopSpinner();
       break;
     } catch (err) {
@@ -170,11 +213,37 @@ export async function scout() {
     }
   }
 
-  const outPath = resolve(cwd, 'project-memory.md');
-  await writeFile(outPath, raw.trim() + '\n', 'utf-8');
+  await writeFile(resolve(cwd, 'project-memory.md'), raw.trim() + '\n', 'utf-8');
+
+  // Derive product.md so twin plan needs no Q&A on existing projects
+  let productRaw;
+  let stopProductSpinner = startSpinner('Deriving product context...');
+  for (let attempt = 0; attempt <= SCOUT_RETRIES; attempt++) {
+    try {
+      productRaw = await callLLM(PRODUCT_PROMPT, projectData);
+      stopProductSpinner();
+      break;
+    } catch (err) {
+      stopProductSpinner();
+      if (attempt < SCOUT_RETRIES) {
+        console.log(dim(`  API error — retrying in ${SCOUT_RETRY_DELAY / 1000}s...`));
+        await sleep(SCOUT_RETRY_DELAY);
+        stopProductSpinner = startSpinner('Deriving product context...');
+      } else {
+        console.log(dim('  Could not derive product.md — twin plan will ask setup questions manually.'));
+        productRaw = null;
+      }
+    }
+  }
+
+  if (productRaw) {
+    await writeFile(resolve(cwd, 'product.md'), productRaw.trim() + '\n', 'utf-8');
+  }
 
   console.log(`\n${bar}`);
   console.log(bold('  Scout complete'));
-  console.log(dim('  project-memory.md written. Run twin plan to use it.'));
+  console.log(dim('  project-memory.md written'));
+  if (productRaw) console.log(dim('  product.md written — twin plan will skip setup questions'));
+  console.log(dim('  Run twin plan to generate stories.'));
   console.log(bar + '\n');
 }

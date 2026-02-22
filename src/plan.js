@@ -9,16 +9,17 @@ const TASK_SYSTEM_PROMPT = `You are a taste-aware product planner. You receive:
 2. A product.md — what they're building, for whom, and where it stands
 3. Optionally, a status.md — recent progress
 4. Optionally, an existing prd.json — stories already planned (avoid duplicating these)
+5. Optionally, a project-memory.md — autobiographical memory of an existing codebase
 
 Your job: generate 3-5 atomic capabilities — things a user can DO after they're built. Not stubs, not refactors, not "set up X." Real, demoable features.
 
-If project-memory.md is provided, use it to avoid planning work that's already done or that conflicts with established patterns.
+If project-memory.md is provided, you MUST first enumerate every user-facing feature that is clearly already implemented in the project. Put these in the "alreadyBuilt" field. Then generate "userStories" ONLY for capabilities NOT in "alreadyBuilt". This is not optional — if you skip "alreadyBuilt", you will suggest features that already exist.
 
 Rules:
 - Match the builder's taste. If they ship fast, suggest quick wins. If they want polish, suggest completeness.
 - Order by priority — most impactful first
 - Use plain language, no jargon
-- Do NOT duplicate anything already in the existing tasks
+- Do NOT duplicate anything already in the existing tasks or alreadyBuilt
 
 You MUST respond with valid JSON only. No markdown, no code fences, no explanation. Just the JSON object.
 
@@ -26,6 +27,7 @@ Schema:
 {
   "project": "short project name",
   "description": "one-line project description",
+  "alreadyBuilt": ["feature already implemented", "another existing feature"],
   "userStories": [
     {
       "id": "US-001",
@@ -38,7 +40,7 @@ Schema:
   ]
 }
 
-Every story MUST have "status": "open". Do not include priority numbers — ordering in the array IS the priority.`;
+Every story MUST have "status": "open". Do not include priority numbers — ordering in the array IS the priority. "alreadyBuilt" may be an empty array if project-memory.md is not provided.`;
 
 async function readIfExists(path) {
   try {
@@ -157,6 +159,8 @@ export async function runPlan(cwd) {
     }
   }
 
+  // alreadyBuilt is a reasoning artifact — don't persist it to prd.json
+  delete prd.alreadyBuilt;
   await writeFile(prdPath, JSON.stringify(prd, null, 2) + '\n', 'utf-8');
   return newStories;
 }

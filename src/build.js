@@ -37,12 +37,13 @@ ${progressContent ? '3. **progress.md** — notes from previous build runs. Read
 
 1. Read prd.json and find stories that are not "done"
 2. Pick ONE story — the single story YOU think should be built next based on the twin's taste and the current state of the codebase
-3. Build that ONE story. Write real, working code. Follow the acceptance criteria.
-4. When the story's acceptance criteria are met, update prd.json: set that story's status to "done" and add "completedAt" with the current ISO timestamp
-5. Append to progress.md what you built, what files changed, and any learnings
-6. Commit your work with a clear message
-7. Output ${COMPLETION_SIGNAL} when you finish the story
-8. If ALL stories in prd.json are "done" after completing yours, output ${ALL_DONE_SIGNAL} instead
+3. Output exactly one line: → [story ID]: [story title]
+4. Build that ONE story. Write real, working code. Follow the acceptance criteria.
+5. When the story's acceptance criteria are met, update prd.json: set that story's status to "done" and add "completedAt" with the current ISO timestamp
+6. Append to progress.md what you built, what files changed, and any learnings
+7. Commit your work with a clear message
+8. Output ${COMPLETION_SIGNAL} when you finish the story
+9. If ALL stories in prd.json are "done" after completing yours, output ${ALL_DONE_SIGNAL} instead
 
 ## Rules
 - Build ONE story per run. Do not start a second story.
@@ -145,7 +146,10 @@ function runIteration(prompt, cwd) {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       const idle = Date.now() - lastActivity;
       if (idle > 5_000) {
-        showStatus('Working...');
+        const msg = elapsed < 20 ? 'Reading your project...'
+                  : elapsed < 50 ? 'Deciding what to build...'
+                  : 'Working...';
+        showStatus(msg);
       }
     }, 5_000);
 

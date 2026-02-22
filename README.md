@@ -133,7 +133,7 @@ Requires Claude Code installed and available in your PATH.
 
 **Dropping twin into an existing project?**
 
-Run this first. It reads your git history, project structure, and key files, then writes `project-memory.md`. After that, `twin plan` generates stories that extend what exists rather than ignore or duplicate it.
+Run this first. It reads your git history, project structure, and key files, then writes `project-memory.md` and `product.md`. After that, `twin plan` generates stories that extend what exists — no setup questions, no manual description needed.
 
 ```bash
 npx twin-cli scout
