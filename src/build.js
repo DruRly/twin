@@ -99,6 +99,7 @@ function runIteration(prompt, cwd) {
   return new Promise((resolvePromise) => {
     const claude = spawn('claude', [
       '--print',
+      '--verbose',
       '--dangerously-skip-permissions',
       '--output-format', 'stream-json',
     ], {
